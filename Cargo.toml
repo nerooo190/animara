@@ -1,0 +1,46 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+authors = ["Animara contributors"]
+repository = "https://github.com/animara/animara"
+rust-version = "1.95"
+
+[workspace.dependencies]
+animara-geometry = { path = "crates/geometry" }
+animara-document = { path = "crates/document" }
+animara-animation = { path = "crates/animation" }
+animara-rigging = { path = "crates/rigging" }
+animara-text = { path = "crates/text" }
+animara-renderer = { path = "crates/renderer" }
+animara-media = { path = "crates/media" }
+animara-importers = { path = "crates/importers" }
+animara-exporters = { path = "crates/exporters" }
+animara-scripting = { path = "crates/scripting" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+log = "0.4"
+tiny-skia = "0.12"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
+png = "0.18"
+gif = "0.14"
+quick-xml = "0.42"
+usvg = "0.49"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 4

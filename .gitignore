@@ -1,0 +1,4 @@
+/target
+*.anim.tmp
+/dist
+/adobe animate reference.mp4

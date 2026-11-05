@@ -1,0 +1,13 @@
+[package]
+name = "animara-document"
+description = "Document model, timeline editing and native file format for Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+animara-geometry.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+zip.workspace = true
