@@ -158,7 +158,7 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             tls.scroll.y -= scroll.y;
         }
     }
-    let st = core.doc_mut().unwrap();
+    let st = core.docs.get_mut(core.active).unwrap();
     let tl_len = st.timeline().length();
     let visible_rows: Vec<usize> = (0..st.timeline().layers.len()).filter(|&i| !st.timeline().is_collapsed_away(i)).collect();
     let content_h = visible_rows.len() as f32 * ROW_H;
@@ -240,7 +240,12 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             if k.duration > 1 {
                 let ex = fx(k.end() - 1);
                 if k.tween.is_some() {
-                    painter_frames.arrow(pos2(kx + 5.0, y + ROW_H / 2.0), vec2(ex - kx - 2.0, 0.0), Stroke::new(1.0, Color32::from_gray(20)));
+                    // Tween arrow: a line with a small fixed-size head.
+                    let (a, b) = (pos2(kx + 5.0, y + ROW_H / 2.0), pos2(ex + fw / 2.0, y + ROW_H / 2.0));
+                    let st_ = Stroke::new(1.0, Color32::from_gray(20));
+                    painter_frames.line_segment([a, b], st_);
+                    painter_frames.line_segment([b, b + vec2(-5.0, -3.5)], st_);
+                    painter_frames.line_segment([b, b + vec2(-5.0, 3.5)], st_);
                 } else {
                     painter_frames.rect_stroke(Rect::from_min_max(pos2(ex + 2.0, y + 5.0), pos2(ex + fw - 2.0, y + ROW_H - 4.0)), 0.0, Stroke::new(1.0, Color32::from_gray(30)), egui::StrokeKind::Middle);
                 }

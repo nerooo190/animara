@@ -153,6 +153,19 @@ impl FontLibrary {
         "Ubuntu".to_string()
     }
 
+    /// Raw font file bytes for the first face of a family (used to give the UI
+    /// fallback fonts for symbols). Returns `None` when the family is not installed.
+    pub fn family_bytes(&self, family: &str) -> Option<(Vec<u8>, u32)> {
+        let q = fontdb::Query { families: &[fontdb::Family::Name(family)], ..Default::default() };
+        let id = self.db.query(&q)?;
+        let name_ok = self.db.face(id).is_some_and(|f| f.families.iter().any(|(n, _)| n == family));
+        if !name_ok {
+            return None;
+        }
+        let f = self.load(id)?;
+        Some((f.data.as_ref().clone(), f.index))
+    }
+
     /// Sorted list of available font family names (plus generic families).
     pub fn families(&self) -> Vec<String> {
         let mut v: Vec<String> = self.db.faces().filter_map(|f| f.families.first().map(|(n, _)| n.clone())).collect();

@@ -515,7 +515,7 @@ pub fn stage_ui(core: &mut AppCore, ui: &mut egui::Ui) {
     let canvas = if rulers { egui::Rect::from_min_max(full.min + egui::vec2(18.0, 18.0), full.max) } else { full };
     let resp = ui.allocate_rect(full, Sense::click_and_drag());
     {
-        let st = core.doc_mut().unwrap();
+        let st = core.docs.get_mut(core.active).unwrap();
         if st.view.needs_fit {
             fit(st, canvas);
         }
@@ -597,7 +597,7 @@ fn edit_bar(core: &mut AppCore, ui: &mut egui::Ui) {
             });
         });
     }
-    let st = core.doc_mut().unwrap();
+    let st = core.docs.get_mut(core.active).unwrap();
     if let Some(l) = exit_to {
         ops::exit_to_level(st, l);
     }
@@ -827,11 +827,9 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
             let r = egui::Rect::from_two_pos(to_pos(view.apply(*start)), to_pos(view.apply(p_now)));
             painter.rect(r, 0.0, SEL_COLOR.gamma_multiply(0.1), EStroke::new(1.0, SEL_COLOR), egui::StrokeKind::Middle);
         }
-        Drag::Lasso { points } | Drag::Points { points: _ } if core.tool == Tool::Lasso => {
-            if let Drag::Lasso { points } = &core.tstate.drag {
-                let pts: Vec<Pos2> = points.iter().map(|p| to_pos(view.apply(*p))).collect();
-                painter.add(egui::Shape::closed_line(pts, EStroke::new(1.0, SEL_COLOR)));
-            }
+        Drag::Lasso { points } => {
+            let pts: Vec<Pos2> = points.iter().map(|p| to_pos(view.apply(*p))).collect();
+            painter.add(egui::Shape::closed_line(pts, EStroke::new(1.0, SEL_COLOR)));
         }
         Drag::Points { points } => {
             let t = &core.settings.tools;
@@ -953,7 +951,7 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
 
     // Zoom & pan with wheel / pinch.
     if hovered {
-        let st = core.doc_mut().unwrap();
+        let st = core.docs.get_mut(core.active).unwrap();
         if zoom_delta != 1.0 {
             zoom_about(st, zoom_delta as f64, to_vec(pointer) - to_vec(canvas.min));
         } else if modifiers.command && scroll.y != 0.0 {
@@ -966,7 +964,7 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
     if core.settings.rulers && resp.drag_started() {
         let origin = ui.input(|i| i.pointer.press_origin()).unwrap_or(pointer);
         if !canvas.contains(origin) && full.contains(origin) {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             st.checkpoint("Add Guide");
             if origin.y < canvas.min.y {
                 st.doc.guides.horizontal.push(p.y);
@@ -996,7 +994,7 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
 
     // Double-click actions.
     if resp.double_clicked() && matches!(tool, Tool::Select | Tool::FreeTransform | Tool::Subselect) {
-        let st = core.doc_mut().unwrap();
+        let st = core.docs.get_mut(core.active).unwrap();
         let tol = 3.0 / view.mean_scale();
         match pick(st, p, tol, false) {
             Some((_, e)) => match &e.kind {
@@ -1092,8 +1090,8 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
 fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, shift: bool, alt: bool, is_click: bool, auto_key: bool, pressure: f64) {
     let tol = 3.0 / view.mean_scale();
     match tool {
-        Tool::Select | Tool::Lasso if tool == Tool::Select => {
-            let st = core.doc_mut().unwrap();
+        Tool::Select => {
+            let st = core.docs.get_mut(core.active).unwrap();
             st.text_edit = None;
             // Bone IK drag on armature layers.
             if let Some(ai) = armature_layer_index(st)
@@ -1143,7 +1141,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::FreeTransform => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let sp = view.apply(origin);
             if let Some(h) = handle_at(st, view, sp)
                 && let Some((frame, local)) = selection_box(st)
@@ -1176,7 +1174,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::Subselect => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let ctx = st.context_transform();
             // Anchor / handle hit on selected shapes first.
             for (_, e) in st.selected() {
@@ -1238,7 +1236,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::GradientTransform => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let ctx = st.context_transform();
             if let Some((_, e)) = st.selected().first().cloned()
                 && let ElementKind::Shape(s) = &e.kind
@@ -1298,7 +1296,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             bucket_like(core, tool, origin, tol, auto_key);
         }
         Tool::Text => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             if let Some((li, e)) = pick(st, origin, tol, false)
                 && let ElementKind::Text(t) = &e.kind
             {
@@ -1320,7 +1318,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::Bone => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let parent = armature_layer_index(st).and_then(|ai| {
                 let (arm, pose) = current_pose(st, ai)?;
                 let world = animara_rigging::forward(&arm, &pose);
@@ -1335,7 +1333,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::AssetWarp => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let ctx = st.context_transform();
             if let Some((id, pins)) = core.tstate.warp_pins.clone()
                 && let Some((_, e)) = st.selected().into_iter().find(|(_, e)| e.id == id)
@@ -1364,7 +1362,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::Camera => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             if let Some(ci) = st.timeline().layers.iter().position(|l| l.kind == LayerKind::Camera) {
                 st.checkpoint("Move Camera");
                 st.layer = ci;
@@ -1374,7 +1372,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             }
         }
         Tool::Zoom => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let sp = view.apply(origin);
             let local = sp - Vec2::new(view.tx, view.ty) + st.view.pan;
             zoom_about(st, if alt { 0.5 } else { 2.0 }, local);
@@ -1635,7 +1633,7 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
     let drag = std::mem::take(&mut core.tstate.drag);
     match drag {
         Drag::Marquee { start, add } => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let r = Rect::from_points(start, p);
             let ctx = st.context_transform();
             let mut ids = if add { st.selection.clone() } else { Vec::new() };
@@ -1653,7 +1651,7 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
             st.selection = ids;
         }
         Drag::Lasso { points } => {
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let poly = Path::polyline(&points, true);
             let ctx = st.context_transform();
             let mut ids = Vec::new();
@@ -1782,7 +1780,7 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
             if start.distance(p) < 3.0 {
                 return;
             }
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             let ctx_inv = st.context_transform().invert().unwrap_or(Affine::IDENTITY);
             let (a, b) = (ctx_inv.apply(start), ctx_inv.apply(p));
             st.checkpoint("Add Bone");
@@ -1872,7 +1870,7 @@ pub fn finish_pen(core: &mut AppCore, close: bool) {
 fn create_text(core: &mut AppCore, at: Vec2, width: Option<f64>) {
     let auto_key = core.settings.tools.auto_keyframe;
     let style = core.settings.tools.text_style.clone();
-    let st = core.doc_mut().unwrap();
+    let st = core.docs.get_mut(core.active).unwrap();
     let ctx_inv = st.context_transform().invert().unwrap_or(Affine::IDENTITY);
     let mut t = TextElement::new("", style);
     t.width = width;
@@ -1931,7 +1929,7 @@ fn bucket_like(core: &mut AppCore, tool: Tool, p: Vec2, tol: f64, auto_key: bool
             });
             let Some((pi, sp)) = target else { return };
             let bounds = sp.path.bounds();
-            let st = core.doc_mut().unwrap();
+            let st = core.docs.get_mut(core.active).unwrap();
             st.layer = li;
             st.checkpoint(if tool == Tool::PaintBucket { "Paint Bucket" } else { "Ink Bottle" });
             if let Some(el) = st.element_mut(e.id, auto_key)
@@ -1988,7 +1986,7 @@ pub fn stage_keys(core: &mut AppCore, ctx: &egui::Context) {
     let text_editing = core.doc().is_some_and(|d| d.text_edit.is_some());
     if text_editing {
         let auto_key = core.settings.tools.auto_keyframe;
-        let st = core.doc_mut().unwrap();
+        let st = core.docs.get_mut(core.active).unwrap();
         let te = st.text_edit.clone().unwrap();
         let Some(current) = st.selected().into_iter().find(|(_, e)| e.id == te.element).and_then(|(_, e)| match e.kind {
             ElementKind::Text(t) => Some(t),
@@ -2065,7 +2063,7 @@ pub fn stage_keys(core: &mut AppCore, ctx: &egui::Context) {
         }
         return;
     }
-    if ctx.wants_keyboard_input() {
+    if ctx.egui_wants_keyboard_input() {
         return;
     }
     for ev in &events {

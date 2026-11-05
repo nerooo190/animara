@@ -157,7 +157,9 @@ fn tool_props(core: &mut AppCore, ui: &mut egui::Ui) {
         Tool::Text => {
             let fonts = core.font_families.clone();
             let t = &mut core.settings.tools;
-            section(ui, "Character", true, |ui| text_style_ui(ui, &mut t.text_style, &fonts));
+            section(ui, "Character", true, |ui| {
+                text_style_ui(ui, &mut t.text_style, &fonts);
+            });
         }
         _ => {}
     }
@@ -626,7 +628,7 @@ fn filters_ui(ui: &mut egui::Ui, filters: &mut Vec<Filter>) {
     if let Some(i) = remove {
         filters.remove(i);
     }
-    ui.menu_button("＋ Add filter", |ui| {
+    ui.menu_button("+ Add filter", |ui| {
         if ui.button("Blur").clicked() {
             filters.push(Filter::default_blur());
             ui.close();
@@ -936,10 +938,10 @@ pub fn library(core: &mut AppCore, ui: &mut egui::Ui) {
     let mut action: Option<(&'static str, animara_document::Id)> = None;
     ui.horizontal(|ui| {
         ui.add(egui::TextEdit::singleline(&mut filter).hint_text("🔍 Search library").desired_width(ui.available_width() - 60.0));
-        if ui.button("＋◆").on_hover_text("New Symbol").clicked() {
+        if ui.button("+◆").on_hover_text("New Symbol").clicked() {
             core.queue.push(C::NewSymbol);
         }
-        if ui.button("＋📁").on_hover_text("New Folder").clicked() {
+        if ui.button("+📁").on_hover_text("New Folder").clicked() {
             action = Some(("new_folder", animara_document::Id(0)));
         }
     });
@@ -1323,7 +1325,7 @@ pub fn swatches(core: &mut AppCore, ui: &mut egui::Ui) {
     });
     ui.separator();
     ui.weak("Click: fill · Shift+click: stroke · Right-click: remove");
-    let add = ui.button("＋ Add current fill color").clicked();
+    let add = ui.button("+ Add current fill color").clicked();
     if let Some((c, stroke)) = pick {
         if stroke {
             core.settings.tools.stroke_color = c;
@@ -1695,8 +1697,12 @@ pub fn motion_editor(core: &mut AppCore, ui: &mut egui::Ui) {
             drag_idx = None;
         }
         match drag_idx {
-            Some(i) => ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("me_drag"), i)),
-            None => ui.ctx().data_mut(|d| d.remove_temp::<usize>(egui::Id::new("me_drag"))).map(|_| ()).unwrap_or(()),
+            Some(i) => {
+                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("me_drag"), i));
+            }
+            None => {
+                ui.ctx().data_mut(|d| d.remove_temp::<usize>(egui::Id::new("me_drag")));
+            }
         }
         ui.weak("Double-click to add/remove points; drag to shape the curve.");
     }
@@ -1734,7 +1740,7 @@ pub fn scenes_panel(core: &mut AppCore, ui: &mut egui::Ui) {
             }
         });
     }
-    if ui.button("＋ Add scene").clicked() {
+    if ui.button("+ Add scene").clicked() {
         ops::add_scene(st);
     }
     let mut name = st.doc.scenes.get(st.scene).map(|s| s.name.clone()).unwrap_or_default();
