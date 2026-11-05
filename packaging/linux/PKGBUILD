@@ -1,0 +1,35 @@
+# Maintainer: Animara contributors
+pkgname=animara
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="2D vector animation studio (timeline, tweens, symbols, bones, scripting, FLA/XFL import)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/animara/animara"
+license=('MIT' 'Apache-2.0')
+depends=('libxkbcommon' 'wayland' 'libglvnd' 'fontconfig')
+optdepends=('ffmpeg: video import/export and MP3/OGG/FLAC import'
+            'pipewire: audio playback via pw-play')
+makedepends=('cargo')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  cargo build --release --locked -p animara-app -p animara-cli
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  cargo test --release --locked --workspace
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/animara "$pkgdir/usr/bin/animara"
+  install -Dm755 target/release/animara-cli "$pkgdir/usr/bin/animara-cli"
+  install -Dm644 packaging/linux/io.github.animara.Animara.desktop "$pkgdir/usr/share/applications/io.github.animara.Animara.desktop"
+  install -Dm644 packaging/linux/io.github.animara.Animara.metainfo.xml "$pkgdir/usr/share/metainfo/io.github.animara.Animara.metainfo.xml"
+  install -Dm644 packaging/linux/io.github.animara.Animara.mime.xml "$pkgdir/usr/share/mime/packages/io.github.animara.Animara.xml"
+  install -Dm644 assets/animara.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/io.github.animara.Animara.svg"
+  install -Dm644 LICENSES.md "$pkgdir/usr/share/licenses/$pkgname/LICENSES.md"
+}

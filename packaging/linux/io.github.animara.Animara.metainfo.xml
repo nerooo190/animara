@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.animara.Animara</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <name>Animara</name>
+  <summary>2D vector animation studio</summary>
+  <description>
+    <p>Animara is a timeline-based 2D animation application: vector drawing tools, symbols, classic/shape/motion tweens, bones and inverse kinematics, cameras, scripting, and export to video, GIF, SVG, Lottie, HTML5 Canvas and SWF. It opens CS5+ FLA and XFL documents.</p>
+  </description>
+  <launchable type="desktop-id">io.github.animara.Animara.desktop</launchable>
+  <url type="homepage">https://github.com/animara/animara</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-11-05"/>
+  </releases>
+</component>

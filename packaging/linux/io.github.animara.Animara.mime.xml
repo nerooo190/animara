@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-animara">
+    <comment>Animara animation document</comment>
+    <glob pattern="*.anim"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+  <mime-type type="application/vnd.adobe.xfl">
+    <comment>Animate XFL / FLA document</comment>
+    <glob pattern="*.fla"/>
+    <glob pattern="*.xfl"/>
+  </mime-type>
+</mime-info>

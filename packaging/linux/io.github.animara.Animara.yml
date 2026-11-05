@@ -1,0 +1,39 @@
+# Flatpak manifest. Build with:
+#   flatpak-builder --user --install --force-clean build-dir packaging/linux/io.github.animara.Animara.yml
+# Uses the prebuilt release binary (built by `cargo build --release`) to avoid vendoring crates offline.
+app-id: io.github.animara.Animara
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: animara
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --socket=pulseaudio
+  - --filesystem=home
+  - --talk-name=org.freedesktop.portal.Desktop
+modules:
+  - name: animara
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 animara /app/bin/animara
+      - install -Dm755 animara-cli /app/bin/animara-cli
+      - install -Dm644 io.github.animara.Animara.desktop /app/share/applications/io.github.animara.Animara.desktop
+      - install -Dm644 io.github.animara.Animara.metainfo.xml /app/share/metainfo/io.github.animara.Animara.metainfo.xml
+      - install -Dm644 io.github.animara.Animara.mime.xml /app/share/mime/packages/io.github.animara.Animara.xml
+      - install -Dm644 animara.svg /app/share/icons/hicolor/scalable/apps/io.github.animara.Animara.svg
+    sources:
+      - type: file
+        path: ../../target/release/animara
+      - type: file
+        path: ../../target/release/animara-cli
+      - type: file
+        path: io.github.animara.Animara.desktop
+      - type: file
+        path: io.github.animara.Animara.metainfo.xml
+      - type: file
+        path: io.github.animara.Animara.mime.xml
+      - type: file
+        path: ../../assets/animara.svg

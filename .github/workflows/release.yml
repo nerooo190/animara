@@ -1,0 +1,167 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libfuse2 file
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --release
+      - run: cargo build --release -p animara-app -p animara-cli
+      - name: Packaging tools
+        run: |
+          cargo install cargo-deb cargo-generate-rpm --locked
+          curl -fsSL -o appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${{ matrix.arch }}.AppImage"
+          chmod +x appimagetool && sudo mv appimagetool /usr/local/bin/
+      - name: Build tarball, AppImage, deb, rpm
+        run: ARCH=${{ matrix.arch }} packaging/linux/package.sh all
+      - name: PKGBUILD source bundle
+        run: tar -czf dist/animara-PKGBUILD.tar.gz -C packaging/linux PKGBUILD
+      - name: Verify packages
+        run: |
+          tar -tzf dist/animara-*-linux-${{ matrix.arch }}.tar.gz | grep -q animara-cli
+          dpkg-deb --info dist/*.deb
+          rpm -qpi dist/*.rpm || true
+          ./dist/Animara-*-${{ matrix.arch }}.AppImage --appimage-extract >/dev/null && squashfs-root/usr/bin/animara-cli --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*
+
+  flatpak:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release -p animara-app -p animara-cli
+      - uses: flathub-infra/flatpak-github-actions/flatpak-builder@master
+        with:
+          bundle: Animara.flatpak
+          manifest-path: packaging/linux/io.github.animara.Animara.yml
+          upload-artifact: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak
+          path: Animara.flatpak
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            arch: x64
+          - target: aarch64-pc-windows-msvc
+            arch: arm64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Test (native only)
+        if: matrix.arch == 'x64'
+        run: cargo test --workspace --release
+      - run: cargo build --release --target ${{ matrix.target }} -p animara-app -p animara-cli
+      - name: Version
+        id: v
+        shell: bash
+        run: echo "version=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)" >> $GITHUB_OUTPUT
+      - name: Portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $dir = "Animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}-portable"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/animara.exe, target/${{ matrix.target }}/release/animara-cli.exe, README.md, LICENSES.md $dir
+          Compress-Archive -Path $dir -DestinationPath "dist/$dir.zip"
+          Copy-Item target/${{ matrix.target }}/release/animara.exe "dist/animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}.exe"
+      - name: MSI (WiX)
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix
+          wix build packaging/windows/animara.wxs -arch ${{ matrix.arch }} -d Version=${{ steps.v.outputs.version }} -d BinDir=target/${{ matrix.target }}/release -o "dist/Animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}.msi"
+      - name: Setup EXE (NSIS)
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\NSIS\makensis.exe" /DVERSION=${{ steps.v.outputs.version }} /DBINDIR=..\..\target\${{ matrix.target }}\release /DOUTFILE=..\..\dist\Animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}-setup.exe packaging\windows\animara.nsi
+      - name: Smoke test
+        if: matrix.arch == 'x64'
+        run: target/${{ matrix.target }}/release/animara-cli.exe --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: dist/*
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --release
+      - run: brew install librsvg
+      - name: Universal app, DMG, PKG, tarball
+        env:
+          UNIVERSAL: '1'
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          MACOS_INSTALLER_IDENTITY: ${{ secrets.MACOS_INSTALLER_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: packaging/macos/package.sh
+      - name: Verify
+        run: |
+          dist/Animara.app/Contents/MacOS/animara-cli --version
+          lipo -info dist/Animara.app/Contents/MacOS/animara
+          cp packaging/macos/install.sh dist/install-macos.sh
+          rm -rf dist/Animara.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: dist/*
+
+  publish:
+    needs: [linux, flatpak, windows, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Checksums and release notes
+        run: |
+          cd artifacts && rm -f SHA256SUMS*.txt && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+          cd .. && awk '/^## /{n++} n==1' CHANGELOG.md > RELEASE_NOTES.md
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body_path: RELEASE_NOTES.md
+          files: artifacts/*

@@ -28,3 +28,36 @@ rfd = "0.17"
 dirs = "7.0.0"
 egui = "0.37"
 egui_stack = { version = "0.22", features = ["serde"] }
+
+[package.metadata.deb]
+name = "animara"
+maintainer = "Animara contributors"
+copyright = "Animara contributors"
+extended-description = "2D vector animation studio: timeline, tweens, symbols, bones/IK, cameras, scripting, FLA/XFL import, video/GIF/SVG/Lottie/HTML5/SWF export."
+section = "graphics"
+priority = "optional"
+depends = "libc6 (>= 2.34), libxkbcommon0, libwayland-client0, libgl1, libegl1"
+recommends = "ffmpeg"
+assets = [
+    ["target/release/animara", "usr/bin/", "755"],
+    ["target/release/animara-cli", "usr/bin/", "755"],
+    ["../../packaging/linux/io.github.animara.Animara.desktop", "usr/share/applications/", "644"],
+    ["../../packaging/linux/io.github.animara.Animara.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["../../packaging/linux/io.github.animara.Animara.mime.xml", "usr/share/mime/packages/io.github.animara.Animara.xml", "644"],
+    ["../../assets/animara.svg", "usr/share/icons/hicolor/scalable/apps/io.github.animara.Animara.svg", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "animara"
+license = "MIT OR Apache-2.0"
+summary = "2D vector animation studio"
+assets = [
+    { source = "target/release/animara", dest = "/usr/bin/animara", mode = "755" },
+    { source = "target/release/animara-cli", dest = "/usr/bin/animara-cli", mode = "755" },
+    { source = "../../packaging/linux/io.github.animara.Animara.desktop", dest = "/usr/share/applications/io.github.animara.Animara.desktop", mode = "644" },
+    { source = "../../packaging/linux/io.github.animara.Animara.metainfo.xml", dest = "/usr/share/metainfo/io.github.animara.Animara.metainfo.xml", mode = "644" },
+    { source = "../../packaging/linux/io.github.animara.Animara.mime.xml", dest = "/usr/share/mime/packages/io.github.animara.Animara.xml", mode = "644" },
+    { source = "../../assets/animara.svg", dest = "/usr/share/icons/hicolor/scalable/apps/io.github.animara.Animara.svg", mode = "644" },
+]
+[package.metadata.generate-rpm.recommends]
+ffmpeg = "*"

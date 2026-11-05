@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Animara
+GenericName=2D Animation Studio
+Comment=Create vector animations, interactive content and videos
+Exec=animara %F
+Icon=io.github.animara.Animara
+Terminal=false
+Categories=Graphics;VectorGraphics;2DGraphics;AudioVideo;Video;
+MimeType=application/x-animara;application/vnd.adobe.xfl;image/svg+xml;
+Keywords=animation;vector;timeline;tween;cartoon;flash;
+StartupWMClass=io.github.animara.Animara
