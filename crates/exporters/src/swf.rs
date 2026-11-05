@@ -234,7 +234,13 @@ impl Ctx<'_> {
         for sub in world.subpaths() {
             // Orientation decides which side carries the fill.
             let area: f64 = sub.segments.iter().map(|s| s.start().cross(s.end())).sum();
-            let (f0, f1) = if !has_fill { (0, 0) } else if area >= 0.0 { (0, 1) } else { (1, 0) };
+            let (f0, f1) = if !has_fill {
+                (0, 0)
+            } else if area >= 0.0 {
+                (0, 1)
+            } else {
+                (1, 0)
+            };
             let tw = |v: Vec2| ((v.x * 20.0).round() as i32, (v.y * 20.0).round() as i32);
             let (sx, sy) = tw(sub.start);
             // Style change: line, fill1, fill0, moveTo.
@@ -254,7 +260,7 @@ impl Ctx<'_> {
                 b.ub(1, 1);
             }
             let mut cur = (sx, sy);
-            let mut emit_line = |b: &mut Bits, cur: &mut (i32, i32), to: (i32, i32)| {
+            let emit_line = |b: &mut Bits, cur: &mut (i32, i32), to: (i32, i32)| {
                 let (dx, dy) = (to.0 - cur.0, to.1 - cur.1);
                 if dx == 0 && dy == 0 {
                     return;
@@ -281,10 +287,11 @@ impl Ctx<'_> {
                 *cur = to;
             };
             let mut segs = sub.segments.clone();
-            if !sub.closed && has_fill {
-                if let (Some(f), Some(l)) = (segs.first().map(|s| s.start()), segs.last().map(|s| s.end())) {
-                    segs.push(Segment::Line(l, f));
-                }
+            if !sub.closed
+                && has_fill
+                && let (Some(f), Some(l)) = (segs.first().map(|s| s.start()), segs.last().map(|s| s.end()))
+            {
+                segs.push(Segment::Line(l, f));
             }
             for s in &segs {
                 match *s {
@@ -301,7 +308,13 @@ impl Ctx<'_> {
         b.ub(6, 0);
         body.extend(b.finish());
         let mut hdr = Bits::new();
-        rect(&mut hdr, (bounds.min.x * 20.0) as i32, (bounds.max.x * 20.0) as i32, (bounds.min.y * 20.0) as i32, (bounds.max.y * 20.0) as i32);
+        rect(
+            &mut hdr,
+            (bounds.min.x * 20.0) as i32,
+            (bounds.max.x * 20.0) as i32,
+            (bounds.min.y * 20.0) as i32,
+            (bounds.max.y * 20.0) as i32,
+        );
         let mut key = hdr.finish();
         key.extend(&body);
         if let Some(id) = self.shapes.get(&key) {
@@ -371,7 +384,9 @@ impl Ctx<'_> {
 fn collect_paths(items: &[DisplayItem], out: &mut Vec<Path>) {
     for it in items {
         match it {
-            DisplayItem::Shape { shape, transform, .. } => out.extend(shape.paths.iter().filter(|p| p.fill.is_some()).map(|p| p.path.transform(transform))),
+            DisplayItem::Shape { shape, transform, .. } => {
+                out.extend(shape.paths.iter().filter(|p| p.fill.is_some()).map(|p| p.path.transform(transform)))
+            }
             DisplayItem::Text { text, transform, .. } => {
                 let s: Shape = animara_text::text_to_shape(text);
                 out.extend(s.paths.iter().map(|p| p.path.transform(transform)));

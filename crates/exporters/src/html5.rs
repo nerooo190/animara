@@ -24,7 +24,9 @@ fn css(c: animara_document::Color) -> String {
 fn fill_spec(f: &Fill, ct: &ColorTransform) -> Value {
     match f {
         Fill::Solid { color } => json!({"t": "c", "c": css(ct.apply(*color))}),
-        Fill::Linear { stops, matrix, .. } => json!({"t": "l", "m": m(matrix), "st": stops.iter().map(|s| json!([s.offset, css(ct.apply(s.color))])).collect::<Vec<_>>()}),
+        Fill::Linear { stops, matrix, .. } => {
+            json!({"t": "l", "m": m(matrix), "st": stops.iter().map(|s| json!([s.offset, css(ct.apply(s.color))])).collect::<Vec<_>>()})
+        }
         Fill::Radial { stops, matrix, focal, .. } => {
             json!({"t": "r", "m": m(matrix), "fo": focal, "st": stops.iter().map(|s| json!([s.offset, css(ct.apply(s.color))])).collect::<Vec<_>>()})
         }
@@ -82,7 +84,13 @@ impl Ctx<'_> {
                             Filter::Blur { blur_x, blur_y, .. } => format!("blur({:.1}px)", (blur_x + blur_y) / 4.0 * scale),
                             Filter::DropShadow { angle, distance, blur_x, color, .. } => {
                                 let a = angle.to_radians();
-                                format!("drop-shadow({:.1}px {:.1}px {:.1}px {})", a.cos() * distance * scale, a.sin() * distance * scale, blur_x / 2.0 * scale, css(color))
+                                format!(
+                                    "drop-shadow({:.1}px {:.1}px {:.1}px {})",
+                                    a.cos() * distance * scale,
+                                    a.sin() * distance * scale,
+                                    blur_x / 2.0 * scale,
+                                    css(color)
+                                )
                             }
                             Filter::Glow { blur_x, color, .. } => format!("drop-shadow(0 0 {:.1}px {})", blur_x / 2.0 * scale, css(color)),
                             Filter::AdjustColor { brightness, contrast, saturation, hue } => format!(

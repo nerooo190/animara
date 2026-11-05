@@ -175,7 +175,6 @@ pub struct ExportSettings {
     pub quality: u8,
     pub loop_count: u16,
     pub include_audio: bool,
-    pub all_scenes: bool,
 }
 
 pub enum Dialog {

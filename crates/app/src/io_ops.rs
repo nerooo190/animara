@@ -1,11 +1,9 @@
 //! File operations: new/open/save, import, export, publish, autosave and crash recovery.
 
 use crate::core::{AppCore, ExportKind, ExportSettings, Settings};
-use crate::ops;
 use crate::state::DocState;
 use animara_document::{Document, Element, ElementKind, Keyframe, SoundRef};
 use animara_exporters::{ExportOptions, VideoFormat};
-use animara_geometry::Affine;
 use std::path::{Path, PathBuf};
 
 pub const NATIVE_EXT: &str = "anim";
@@ -63,7 +61,11 @@ pub fn open_path(core: &mut AppCore, path: &Path) {
             }
             add_doc(core, doc, native.then(|| path.to_path_buf()));
             core.settings.add_recent(path.to_path_buf());
-            core.info(format!("Opened {}{}", path.display(), if n > 0 { format!(" ({n} compatibility warnings — see Output)") } else { String::new() }));
+            core.info(format!(
+                "Opened {}{}",
+                path.display(),
+                if n > 0 { format!(" ({n} compatibility warnings — see Output)") } else { String::new() }
+            ));
         }
         Err(e) => core.error(format!("Could not open {}: {e}", path.display())),
     }
@@ -85,7 +87,10 @@ pub fn save(core: &mut AppCore, save_as: bool) -> bool {
     let Some(st) = core.doc_mut() else { return false };
     let path = match (&st.path, save_as) {
         (Some(p), false) => Some(p.clone()),
-        _ => rfd::FileDialog::new().set_file_name(format!("{}.{NATIVE_EXT}", st.doc.name)).add_filter("Animara document", &[NATIVE_EXT]).save_file(),
+        _ => rfd::FileDialog::new()
+            .set_file_name(format!("{}.{NATIVE_EXT}", st.doc.name))
+            .add_filter("Animara document", &[NATIVE_EXT])
+            .save_file(),
     };
     let Some(mut path) = path else { return false };
     if path.extension().is_none() {
@@ -115,7 +120,13 @@ pub fn save(core: &mut AppCore, save_as: bool) -> bool {
 /// Import files to the stage (current keyframe) or only to the library.
 pub fn import(core: &mut AppCore, to_stage: bool) {
     let files = rfd::FileDialog::new()
-        .add_filter("All importable", &["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "wav", "mp3", "ogg", "flac", "aac", "m4a", "mp4", "mov", "webm", "mkv", "avi", "fla", "xfl", "anim"])
+        .add_filter(
+            "All importable",
+            &[
+                "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "wav", "mp3", "ogg", "flac", "aac", "m4a", "mp4", "mov", "webm", "mkv",
+                "avi", "fla", "xfl", "anim",
+            ],
+        )
         .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp", "bmp"])
         .add_filter("SVG", &["svg"])
         .add_filter("Audio", &["wav", "mp3", "ogg", "flac", "aac", "m4a"])
@@ -302,7 +313,6 @@ pub fn default_export(st: &DocState, kind: ExportKind) -> ExportSettings {
         quality: st.doc.publish.quality,
         loop_count: if st.doc.publish.loop_playback { 0 } else { 1 },
         include_audio: st.doc.publish.include_audio,
-        all_scenes: true,
     }
 }
 
@@ -312,7 +322,10 @@ pub fn run_export(core: &mut AppCore, s: &ExportSettings) {
     let name = st.doc.name.clone();
     let path = match s.kind {
         ExportKind::PngSequence | ExportKind::SvgSequence => rfd::FileDialog::new().set_title("Choose an output folder").pick_folder(),
-        _ => rfd::FileDialog::new().set_file_name(format!("{name}.{}", s.kind.extension())).add_filter(s.kind.name(), &[s.kind.extension()]).save_file(),
+        _ => rfd::FileDialog::new()
+            .set_file_name(format!("{name}.{}", s.kind.extension()))
+            .add_filter(s.kind.name(), &[s.kind.extension()])
+            .save_file(),
     };
     let Some(path) = path else { return };
     export_to(core, s, &path);
@@ -337,11 +350,13 @@ pub fn export_to(core: &mut AppCore, s: &ExportSettings, path: &Path) {
     };
     let base = doc.name.clone();
     let t0 = std::time::Instant::now();
-    let result: Result<Vec<String>, String> = (|| {
+    let result: Result<Vec<String>, String> = {
         let e = |e: animara_exporters::ExportError| e.to_string();
         match s.kind {
             ExportKind::Png => animara_exporters::export_png(&doc, global_frame, path, &opts).map(|_| vec![]).map_err(e),
-            ExportKind::PngSequence => animara_exporters::export_png_sequence(&doc, path, &base, &opts).map(|v| vec![format!("{} files", v.len())]).map_err(e),
+            ExportKind::PngSequence => {
+                animara_exporters::export_png_sequence(&doc, path, &base, &opts).map(|v| vec![format!("{} files", v.len())]).map_err(e)
+            }
             ExportKind::Gif => animara_exporters::export_gif(&doc, path, &opts).map(|_| vec![]).map_err(e),
             ExportKind::Apng => animara_exporters::export_apng(&doc, path, &opts).map(|_| vec![]).map_err(e),
             ExportKind::WebP => animara_exporters::export_video(&doc, path, VideoFormat::WebP, &opts).map(|_| vec![]).map_err(e),
@@ -349,8 +364,12 @@ pub fn export_to(core: &mut AppCore, s: &ExportSettings, path: &Path) {
             ExportKind::WebM => animara_exporters::export_video(&doc, path, VideoFormat::WebM, &opts).map(|_| vec![]).map_err(e),
             ExportKind::Mov => animara_exporters::export_video(&doc, path, VideoFormat::Mov, &opts).map(|_| vec![]).map_err(e),
             ExportKind::Svg => animara_exporters::export_svg_frame(&doc, global_frame, path, &opts).map(|_| vec![]).map_err(e),
-            ExportKind::SvgSequence => animara_exporters::export_svg_sequence(&doc, path, &base, &opts).map(|v| vec![format!("{} files", v.len())]).map_err(e),
-            ExportKind::SpriteSheet => animara_exporters::export_sprite_sheet(&doc, path, &opts).map(|j| vec![format!("metadata: {}", j.display())]).map_err(e),
+            ExportKind::SvgSequence => {
+                animara_exporters::export_svg_sequence(&doc, path, &base, &opts).map(|v| vec![format!("{} files", v.len())]).map_err(e)
+            }
+            ExportKind::SpriteSheet => {
+                animara_exporters::export_sprite_sheet(&doc, path, &opts).map(|j| vec![format!("metadata: {}", j.display())]).map_err(e)
+            }
             ExportKind::Lottie => animara_exporters::export_lottie(&doc, path, &opts).map_err(e),
             ExportKind::Html5 => animara_exporters::export_html5(&doc, path, &opts).map(|_| vec![]).map_err(e),
             ExportKind::Swf => animara_exporters::export_swf(&doc, path, &opts).map_err(e),
@@ -363,7 +382,7 @@ pub fn export_to(core: &mut AppCore, s: &ExportSettings, path: &Path) {
                 p.map(|m| vec![format!("written {}", m.display())]).map_err(e)
             }
         }
-    })();
+    };
     match result {
         Ok(notes) => {
             for n in notes {
@@ -385,7 +404,11 @@ pub fn publish(core: &mut AppCore) {
             None => return,
         },
     };
-    let out = if st.doc.publish.output_name.is_empty() || st.doc.publish.output_name == "untitled" { st.doc.name.clone() } else { st.doc.publish.output_name.clone() };
+    let out = if st.doc.publish.output_name.is_empty() || st.doc.publish.output_name == "untitled" {
+        st.doc.name.clone()
+    } else {
+        st.doc.publish.output_name.clone()
+    };
     let s = default_export(st, ExportKind::Html5);
     export_to(core, &s, &dir.join(format!("{out}.html")));
     let s = default_export(core.doc().unwrap(), ExportKind::Gif);
@@ -410,10 +433,9 @@ pub fn remove_recovery(uid: u64) {
 pub fn autosave(core: &mut AppCore) {
     let _ = std::fs::create_dir_all(recovery_dir());
     for st in &mut core.docs {
-        if st.dirty && st.revision != st.last_autosave_revision {
-            if animara_document::save_document(&st.doc, &recovery_path(st.uid)).is_ok() {
-                st.last_autosave_revision = st.revision;
-            }
+        if st.dirty && st.revision != st.last_autosave_revision && animara_document::save_document(&st.doc, &recovery_path(st.uid)).is_ok()
+        {
+            st.last_autosave_revision = st.revision;
         }
     }
 }
@@ -429,15 +451,5 @@ pub fn pending_recovery() -> Vec<PathBuf> {
 pub fn clean_shutdown(core: &AppCore) {
     for st in &core.docs {
         remove_recovery(st.uid);
-    }
-}
-
-/// Paste a bitmap from a library id at the stage centre (used by drag & drop of images).
-pub fn place_bitmap_center(st: &mut DocState, id: animara_document::Id, auto_key: bool) {
-    if let Some(b) = st.doc.library.bitmap(id) {
-        let (w, h) = (b.width as f64, b.height as f64);
-        let e = Element::new(ElementKind::Bitmap(animara_document::BitmapInstance { asset: id }))
-            .with_transform(Affine::translate((st.doc.width - w) / 2.0, (st.doc.height - h) / 2.0));
-        ops::add_element(st, "Place Bitmap", e, auto_key);
     }
 }

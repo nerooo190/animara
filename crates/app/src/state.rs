@@ -1,7 +1,7 @@
 //! Per-document editing state: the document, history, edit context, selection and view.
 
 use animara_animation::layer_elements_at;
-use animara_document::{Document, Element, ElementKind, History, Id, Keyframe, Layer, LayerKind, Timeline};
+use animara_document::{Document, Element, History, Id, Keyframe, Layer, LayerKind, Timeline};
 use animara_geometry::{Affine, Rect, Vec2};
 use animara_renderer::RenderCache;
 use std::path::PathBuf;
@@ -309,16 +309,6 @@ impl DocState {
     /// Union of world bounds of the selection.
     pub fn selection_bounds(&self) -> Rect {
         let ctx = self.context_transform();
-        self.selected()
-            .iter()
-            .fold(Rect::EMPTY, |r, (_, e)| r.union(&animara_renderer::bounds::element_bounds(&self.doc, e, &ctx)))
-    }
-
-    pub fn is_text(&self, id: Id) -> bool {
-        self.selected().iter().any(|(_, e)| e.id == id && matches!(e.kind, ElementKind::Text(_)))
-    }
-
-    pub fn log_frame_bounds(&self) -> u32 {
-        self.timeline().length()
+        self.selected().iter().fold(Rect::EMPTY, |r, (_, e)| r.union(&animara_renderer::bounds::element_bounds(&self.doc, e, &ctx)))
     }
 }

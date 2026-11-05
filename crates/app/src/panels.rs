@@ -63,7 +63,12 @@ pub fn properties(core: &mut AppCore, ui: &mut egui::Ui, tab: &mut PropTab) {
 fn tool_props(core: &mut AppCore, ui: &mut egui::Ui) {
     let tool = core.tool;
     ui.horizontal(|ui| {
-        icons::paint(ui.painter(), egui::Rect::from_min_size(ui.cursor().min, egui::vec2(18.0, 18.0)), Icon::Tool(tool), ui.visuals().text_color());
+        icons::paint(
+            ui.painter(),
+            egui::Rect::from_min_size(ui.cursor().min, egui::vec2(18.0, 18.0)),
+            Icon::Tool(tool),
+            ui.visuals().text_color(),
+        );
         ui.add_space(22.0);
         ui.label(RichText::new(tool.short()).strong());
     });
@@ -110,13 +115,21 @@ fn tool_props(core: &mut AppCore, ui: &mut egui::Ui) {
         });
         ui.horizontal(|ui| {
             ui.label("Cap");
-            for (c, n) in [(animara_document::LineCap::Butt, "Butt"), (animara_document::LineCap::Round, "Round"), (animara_document::LineCap::Square, "Square")] {
+            for (c, n) in [
+                (animara_document::LineCap::Butt, "Butt"),
+                (animara_document::LineCap::Round, "Round"),
+                (animara_document::LineCap::Square, "Square"),
+            ] {
                 ui.selectable_value(&mut t.cap, c, n);
             }
         });
         ui.horizontal(|ui| {
             ui.label("Join");
-            for (c, n) in [(animara_document::LineJoin::Miter, "Miter"), (animara_document::LineJoin::Round, "Round"), (animara_document::LineJoin::Bevel, "Bevel")] {
+            for (c, n) in [
+                (animara_document::LineJoin::Miter, "Miter"),
+                (animara_document::LineJoin::Round, "Round"),
+                (animara_document::LineJoin::Bevel, "Bevel"),
+            ] {
                 ui.selectable_value(&mut t.join, c, n);
             }
         });
@@ -319,7 +332,9 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
             if sym.as_ref().is_some_and(|s| s.kind == SymbolKind::Graphic) {
                 section(ui, "Looping", true, |ui| {
                     egui::ComboBox::from_id_salt("loopmode").selected_text(format!("{:?}", ni.loop_mode)).show_ui(ui, |ui| {
-                        for m in [LoopMode::Loop, LoopMode::PlayOnce, LoopMode::SingleFrame, LoopMode::LoopReverse, LoopMode::PlayOnceReverse] {
+                        for m in
+                            [LoopMode::Loop, LoopMode::PlayOnce, LoopMode::SingleFrame, LoopMode::LoopReverse, LoopMode::PlayOnceReverse]
+                        {
                             ui.selectable_value(&mut ni.loop_mode, m, format!("{m:?}"));
                         }
                     });
@@ -418,13 +433,13 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
                 }
                 ui.horizontal(|ui| {
                     if ui.button("Smooth").clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("reshape"), 0u8));
+                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("reshape"), 0u8));
                     }
                     if ui.button("Straighten").clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("reshape"), 1u8));
+                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("reshape"), 1u8));
                     }
                     if ui.button("Lines → Fills").clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("reshape"), 3u8));
+                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("reshape"), 3u8));
                     }
                 });
             });
@@ -438,7 +453,7 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
                     el.kind = ElementKind::Shape(ns);
                 }
             }
-            if let Some(m) = ui.ctx().data_mut(|d| d.remove_temp::<u8>(egui::Id::new("reshape"))) {
+            if let Some(m) = ui.ctx().data_mut(|d| d.remove_temp::<u8>(egui::Id::unique("reshape"))) {
                 ops::reshape(st, m, auto_key);
             }
         }
@@ -465,7 +480,8 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
                     nt.set_style_all(|s| *s = style.clone());
                 }
                 ui.horizontal(|ui| {
-                    for (a, n) in [(TextAlign::Left, "⬅"), (TextAlign::Center, "↔"), (TextAlign::Right, "➡"), (TextAlign::Justify, "☰")] {
+                    for (a, n) in [(TextAlign::Left, "⬅"), (TextAlign::Center, "↔"), (TextAlign::Right, "➡"), (TextAlign::Justify, "☰")]
+                    {
                         ui.selectable_value(&mut nt.align, a, n);
                     }
                     ui.checkbox(&mut nt.rtl, "Right-to-left");
@@ -484,7 +500,7 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
                     }
                 });
                 if ui.button("Convert to outlines").clicked() {
-                    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("text_outlines"), true));
+                    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("text_outlines"), true));
                 }
             });
             if nt != t {
@@ -497,7 +513,7 @@ fn object_props(core: &mut AppCore, ui: &mut egui::Ui) {
                     el.kind = ElementKind::Text(nt);
                 }
             }
-            if ui.ctx().data_mut(|d| d.remove_temp::<bool>(egui::Id::new("text_outlines"))).is_some() {
+            if ui.ctx().data_mut(|d| d.remove_temp::<bool>(egui::Id::unique("text_outlines"))).is_some() {
                 st.selection = vec![id];
                 ops::break_apart(st, auto_key);
                 ops::break_apart(st, auto_key);
@@ -700,7 +716,7 @@ fn frame_props(core: &mut AppCore, ui: &mut egui::Ui) {
                 ui.selectable_value(&mut kind, kk, n);
             }
         });
-        nk.label = (!name.is_empty()).then(|| FrameLabel { name, kind });
+        nk.label = (!name.is_empty()).then_some(FrameLabel { name, kind });
     });
     section(ui, "Tweening", true, |ui| {
         let mut kind = nk.tween.as_ref().map(|t| t.kind);
@@ -736,7 +752,7 @@ fn frame_props(core: &mut AppCore, ui: &mut egui::Ui) {
             if t.kind == TweenKind::Motion {
                 ui.horizontal(|ui| {
                     if ui.button("Use guide/selected path as motion path").clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("motion_path_from_guide"), true));
+                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("motion_path_from_guide"), true));
                     }
                     if t.motion_path.is_some() && ui.button("Clear path").clicked() {
                         t.motion_path = None;
@@ -762,7 +778,9 @@ fn frame_props(core: &mut AppCore, ui: &mut egui::Ui) {
         if let Some(s) = &mut nk.sound {
             ui.horizontal(|ui| {
                 ui.label("Sync");
-                for (k, n) in [(SoundSync::Event, "Event"), (SoundSync::Start, "Start"), (SoundSync::Stop, "Stop"), (SoundSync::Stream, "Stream")] {
+                for (k, n) in
+                    [(SoundSync::Event, "Event"), (SoundSync::Start, "Start"), (SoundSync::Stop, "Stop"), (SoundSync::Stream, "Stream")]
+                {
                     ui.selectable_value(&mut s.sync, k, n);
                 }
             });
@@ -803,15 +821,21 @@ fn frame_props(core: &mut AppCore, ui: &mut egui::Ui) {
     section(ui, "Actions", false, |ui| {
         ui.add(egui::TextEdit::multiline(&mut nk.script).code_editor().desired_rows(4).hint_text("stop();"));
     });
-    let use_guide = ui.ctx().data_mut(|d| d.remove_temp::<bool>(egui::Id::new("motion_path_from_guide"))).is_some();
+    let use_guide = ui.ctx().data_mut(|d| d.remove_temp::<bool>(egui::Id::unique("motion_path_from_guide"))).is_some();
     if use_guide {
         // Take the first path from the guide layer, or from the selected shape.
         let path = layer
             .guide_layer
             .and_then(|g| st.timeline().layer(g).cloned())
             .and_then(|g| g.keyframe_at(f).cloned())
-            .and_then(|gk| gk.elements.iter().find_map(|e| ops::shape_from(e).and_then(|s| s.paths.first()).map(|p| p.path.transform(&e.transform))))
-            .or_else(|| st.selected().iter().find_map(|(_, e)| ops::shape_from(e).and_then(|s| s.paths.first()).map(|p| p.path.transform(&e.transform))));
+            .and_then(|gk| {
+                gk.elements.iter().find_map(|e| ops::shape_from(e).and_then(|s| s.paths.first()).map(|p| p.path.transform(&e.transform)))
+            })
+            .or_else(|| {
+                st.selected()
+                    .iter()
+                    .find_map(|(_, e)| ops::shape_from(e).and_then(|s| s.paths.first()).map(|p| p.path.transform(&e.transform)))
+            });
         if let (Some(p), Some(t)) = (path, &mut nk.tween) {
             t.motion_path = Some(p);
         }
@@ -849,7 +873,7 @@ fn doc_props(core: &mut AppCore, ui: &mut egui::Ui) {
             ui.end_row();
         });
         if ui.button("Match contents").clicked() {
-            ui.ctx().data_mut(|dd| dd.insert_temp(egui::Id::new("match_contents"), true));
+            ui.ctx().data_mut(|dd| dd.insert_temp(egui::Id::unique("match_contents"), true));
         }
     });
     section(ui, "Publish Settings", true, |ui| {
@@ -884,7 +908,7 @@ fn doc_props(core: &mut AppCore, ui: &mut egui::Ui) {
         }
         st.doc = d;
     }
-    if ui.ctx().data_mut(|dd| dd.remove_temp::<bool>(egui::Id::new("match_contents"))).is_some() {
+    if ui.ctx().data_mut(|dd| dd.remove_temp::<bool>(egui::Id::unique("match_contents"))).is_some() {
         let dl = animara_animation::evaluate_document_frame(&st.doc, st.scene, st.frame, &animara_animation::EvalOptions::export());
         let b = animara_renderer::bounds::display_bounds(&st.doc, &dl.items);
         if !b.is_empty() {
@@ -959,55 +983,67 @@ pub fn library(core: &mut AppCore, ui: &mut egui::Ui) {
         .collect();
     let folders = st.doc.library.all_folders();
     let scenes: Vec<&animara_document::Timeline> = st.doc.scenes.iter().map(|s| &s.timeline).collect();
-    let counts: std::collections::HashMap<animara_document::Id, usize> = items.iter().map(|(id, ..)| (*id, st.doc.library.use_count(*id, &scenes))).collect();
+    let counts: std::collections::HashMap<animara_document::Id, usize> =
+        items.iter().map(|(id, ..)| (*id, st.doc.library.use_count(*id, &scenes))).collect();
     ui.label(RichText::new(format!("{} items", items.len())).weak().small());
     let selected = core.library_selected;
     let mut new_selected = selected;
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        let mut show_item = |ui: &mut egui::Ui, (id, name, _folder, kind, icon): &(animara_document::Id, String, String, &'static str, Icon)| {
-            let resp = ui
-                .horizontal(|ui| {
-                    let (r, _) = ui.allocate_exact_size(egui::vec2(16.0, 16.0), egui::Sense::hover());
-                    icons::paint(ui.painter(), r, *icon, ui.visuals().text_color());
-                    let lbl = ui.selectable_label(selected == Some(*id), name);
-                    ui.weak(format!("{kind} · {}", counts.get(id).copied().unwrap_or(0)));
-                    lbl
-                })
-                .inner;
-            let resp = ui.interact(resp.rect, resp.id.with("drag"), egui::Sense::click_and_drag());
-            if resp.clicked() {
-                new_selected = Some(*id);
-            }
-            if resp.double_clicked() {
-                action = Some(("edit", *id));
-            }
-            if resp.drag_started() {
-                resp.dnd_set_drag_payload(LibDrag(*id));
-            }
-            if resp.dragged() {
-                ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
-            }
-            resp.context_menu(|ui| {
-                for (a, n) in [("edit", "Edit"), ("place", "Place on Stage"), ("rename", "Rename…"), ("duplicate", "Duplicate"), ("delete", "Delete"), ("kind_mc", "Behavior: Movie Clip"), ("kind_gr", "Behavior: Graphic"), ("kind_bt", "Behavior: Button"), ("play", "Play sound")] {
-                    if ui.button(n).clicked() {
-                        action = Some((a, *id));
-                        ui.close();
-                    }
+        let mut show_item =
+            |ui: &mut egui::Ui, (id, name, _folder, kind, icon): &(animara_document::Id, String, String, &'static str, Icon)| {
+                let resp = ui
+                    .horizontal(|ui| {
+                        let (r, _) = ui.allocate_exact_size(egui::vec2(16.0, 16.0), egui::Sense::hover());
+                        icons::paint(ui.painter(), r, *icon, ui.visuals().text_color());
+                        let lbl = ui.selectable_label(selected == Some(*id), name);
+                        ui.weak(format!("{kind} · {}", counts.get(id).copied().unwrap_or(0)));
+                        lbl
+                    })
+                    .inner;
+                let resp = ui.interact(resp.rect, resp.id.with("drag"), egui::Sense::click_and_drag());
+                if resp.clicked() {
+                    new_selected = Some(*id);
                 }
-                ui.menu_button("Move to folder", |ui| {
-                    if ui.button("(root)").clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("lib_move"), (*id, String::new())));
-                        ui.close();
-                    }
-                    for f in &folders {
-                        if ui.button(f).clicked() {
-                            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("lib_move"), (*id, f.clone())));
+                if resp.double_clicked() {
+                    action = Some(("edit", *id));
+                }
+                if resp.drag_started() {
+                    resp.dnd_set_drag_payload(LibDrag(*id));
+                }
+                if resp.dragged() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+                }
+                resp.context_menu(|ui| {
+                    for (a, n) in [
+                        ("edit", "Edit"),
+                        ("place", "Place on Stage"),
+                        ("rename", "Rename…"),
+                        ("duplicate", "Duplicate"),
+                        ("delete", "Delete"),
+                        ("kind_mc", "Behavior: Movie Clip"),
+                        ("kind_gr", "Behavior: Graphic"),
+                        ("kind_bt", "Behavior: Button"),
+                        ("play", "Play sound"),
+                    ] {
+                        if ui.button(n).clicked() {
+                            action = Some((a, *id));
                             ui.close();
                         }
                     }
+                    ui.menu_button("Move to folder", |ui| {
+                        if ui.button("(root)").clicked() {
+                            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("lib_move"), (*id, String::new())));
+                            ui.close();
+                        }
+                        for f in &folders {
+                            if ui.button(f).clicked() {
+                                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("lib_move"), (*id, f.clone())));
+                                ui.close();
+                            }
+                        }
+                    });
                 });
-            });
-        };
+            };
         for it in items.iter().filter(|i| i.2.is_empty()) {
             show_item(ui, it);
         }
@@ -1020,7 +1056,7 @@ pub fn library(core: &mut AppCore, ui: &mut egui::Ui) {
         }
     });
     core.library_selected = new_selected;
-    if let Some((id, folder)) = ui.ctx().data_mut(|d| d.remove_temp::<(animara_document::Id, String)>(egui::Id::new("lib_move"))) {
+    if let Some((id, folder)) = ui.ctx().data_mut(|d| d.remove_temp::<(animara_document::Id, String)>(egui::Id::unique("lib_move"))) {
         let st = core.doc_mut().unwrap();
         st.checkpoint("Move to Folder");
         if let Some(s) = st.doc.library.symbol_mut(id) {
@@ -1034,7 +1070,7 @@ pub fn library(core: &mut AppCore, ui: &mut egui::Ui) {
         }
     }
     // Rename dialog state.
-    let rename_id = egui::Id::new("lib_rename");
+    let rename_id = egui::Id::unique("lib_rename");
     if let Some((id, mut name)) = ui.ctx().data(|d| d.get_temp::<(animara_document::Id, String)>(rename_id)) {
         let mut open = true;
         let mut apply = false;
@@ -1083,7 +1119,14 @@ pub fn library(core: &mut AppCore, ui: &mut egui::Ui) {
             }
             "place" => place_library_item(core, id, None, auto_key),
             "rename" => {
-                let name = st.doc.library.symbol(id).map(|s| s.name.clone()).or_else(|| st.doc.library.bitmap(id).map(|b| b.name.clone())).or_else(|| st.doc.library.sound(id).map(|s| s.name.clone())).unwrap_or_default();
+                let name = st
+                    .doc
+                    .library
+                    .symbol(id)
+                    .map(|s| s.name.clone())
+                    .or_else(|| st.doc.library.bitmap(id).map(|b| b.name.clone()))
+                    .or_else(|| st.doc.library.sound(id).map(|s| s.name.clone()))
+                    .unwrap_or_default();
                 ui.ctx().data_mut(|d| d.insert_temp(rename_id, (id, name)));
             }
             "duplicate" => {
@@ -1153,7 +1196,7 @@ pub fn place_library_item(core: &mut AppCore, id: animara_document::Id, at: Opti
 pub fn color_panel(core: &mut AppCore, ui: &mut egui::Ui) {
     let auto_key = core.settings.tools.auto_keyframe;
     let t = &mut core.settings.tools;
-    let mut target_fill = ui.ctx().data(|d| d.get_temp::<bool>(egui::Id::new("color_target_fill"))).unwrap_or(true);
+    let mut target_fill = ui.ctx().data(|d| d.get_temp::<bool>(egui::Id::unique("color_target_fill"))).unwrap_or(true);
     ui.horizontal(|ui| {
         ui.selectable_value(&mut target_fill, false, "✏ Stroke");
         ui.selectable_value(&mut target_fill, true, "⬛ Fill");
@@ -1165,7 +1208,7 @@ pub fn color_panel(core: &mut AppCore, ui: &mut egui::Ui) {
             t.fill_color = Color::WHITE;
         }
     });
-    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("color_target_fill"), target_fill));
+    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("color_target_fill"), target_fill));
     if target_fill {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut t.fill_kind, FillKind::Solid, "Solid");
@@ -1179,9 +1222,15 @@ pub fn color_panel(core: &mut AppCore, ui: &mut egui::Ui) {
         t.no_stroke = !t.no_stroke;
     }
     let editing_gradient = target_fill && t.fill_kind != FillKind::Solid;
-    let sel_stop_id = egui::Id::new("grad_stop");
+    let sel_stop_id = egui::Id::unique("grad_stop");
     let mut sel_stop = ui.ctx().data(|d| d.get_temp::<usize>(sel_stop_id)).unwrap_or(0).min(t.gradient.len().saturating_sub(1));
-    let mut color = if editing_gradient { t.gradient.get(sel_stop).map(|s| s.color).unwrap_or(Color::WHITE) } else if target_fill { t.fill_color } else { t.stroke_color };
+    let mut color = if editing_gradient {
+        t.gradient.get(sel_stop).map(|s| s.color).unwrap_or(Color::WHITE)
+    } else if target_fill {
+        t.fill_color
+    } else {
+        t.stroke_color
+    };
     let mut c = c32(color);
     let changed = egui::color_picker::color_picker_color32(ui, &mut c, egui::color_picker::Alpha::OnlyBlend);
     let mut hex = color.to_hex();
@@ -1217,13 +1266,20 @@ pub fn color_panel(core: &mut AppCore, ui: &mut egui::Ui) {
         for i in 0..n {
             let a = i as f32 / n as f32;
             let col = sample_gradient(&t.gradient, a);
-            let r = egui::Rect::from_min_max(egui::pos2(rect.min.x + rect.width() * a, rect.min.y), egui::pos2(rect.min.x + rect.width() * (a + 1.0 / n as f32) + 0.5, rect.max.y));
+            let r = egui::Rect::from_min_max(
+                egui::pos2(rect.min.x + rect.width() * a, rect.min.y),
+                egui::pos2(rect.min.x + rect.width() * (a + 1.0 / n as f32) + 0.5, rect.max.y),
+            );
             ui.painter().rect_filled(r, 0.0, c32(col));
         }
         for (i, s) in t.gradient.iter().enumerate() {
             let x = rect.min.x + rect.width() * s.offset;
             let tri = vec![egui::pos2(x, rect.max.y), egui::pos2(x - 5.0, rect.max.y + 8.0), egui::pos2(x + 5.0, rect.max.y + 8.0)];
-            ui.painter().add(egui::Shape::convex_polygon(tri, c32(s.color), egui::Stroke::new(if i == sel_stop { 2.0 } else { 1.0 }, Color32::WHITE)));
+            ui.painter().add(egui::Shape::convex_polygon(
+                tri,
+                c32(s.color),
+                egui::Stroke::new(if i == sel_stop { 2.0 } else { 1.0 }, Color32::WHITE),
+            ));
         }
         ui.add_space(10.0);
         if let Some(p) = resp.interact_pointer_pos() {
@@ -1353,7 +1409,14 @@ pub fn align_panel(core: &mut AppCore, ui: &mut egui::Ui) {
     ui.label(RichText::new("Align").strong());
     let mut cmd = None;
     ui.horizontal_wrapped(|ui| {
-        for (c, n) in [(C::AlignLeft, "⇤ Left"), (C::AlignHCenter, "⇹ Center"), (C::AlignRight, "⇥ Right"), (C::AlignTop, "⤒ Top"), (C::AlignVCenter, "⇳ Middle"), (C::AlignBottom, "⤓ Bottom")] {
+        for (c, n) in [
+            (C::AlignLeft, "⇤ Left"),
+            (C::AlignHCenter, "⇹ Center"),
+            (C::AlignRight, "⇥ Right"),
+            (C::AlignTop, "⤒ Top"),
+            (C::AlignVCenter, "⇳ Middle"),
+            (C::AlignBottom, "⤓ Bottom"),
+        ] {
             if ui.button(n).on_hover_text(c.label()).clicked() {
                 cmd = Some(c);
             }
@@ -1384,8 +1447,9 @@ pub fn align_panel(core: &mut AppCore, ui: &mut egui::Ui) {
 
 pub fn transform_panel(core: &mut AppCore, ui: &mut egui::Ui) {
     let auto_key = core.settings.tools.auto_keyframe;
-    let id = egui::Id::new("transform_panel");
-    let (mut sx, mut sy, mut rot, mut skx, mut sky, mut lock) = ui.ctx().data(|d| d.get_temp::<(f64, f64, f64, f64, f64, bool)>(id)).unwrap_or((100.0, 100.0, 0.0, 0.0, 0.0, true));
+    let id = egui::Id::unique("transform_panel");
+    let (mut sx, mut sy, mut rot, mut skx, mut sky, mut lock) =
+        ui.ctx().data(|d| d.get_temp::<(f64, f64, f64, f64, f64, bool)>(id)).unwrap_or((100.0, 100.0, 0.0, 0.0, 0.0, true));
     ui.horizontal(|ui| {
         ui.label("Scale");
         ui.add(egui::DragValue::new(&mut sx).suffix("%").speed(1.0));
@@ -1500,7 +1564,12 @@ pub fn info_panel(core: &mut AppCore, ui: &mut egui::Ui) {
     }
     ui.separator();
     ui.label(format!("Stage {}×{} px @ {:.2} fps", st.doc.width, st.doc.height, st.doc.fps));
-    ui.label(format!("Scenes: {} · Frames: {} · Library items: {}", st.doc.scenes.len(), st.doc.total_frames(), st.doc.library.symbols.len() + st.doc.library.bitmaps.len() + st.doc.library.sounds.len()));
+    ui.label(format!(
+        "Scenes: {} · Frames: {} · Library items: {}",
+        st.doc.scenes.len(),
+        st.doc.total_frames(),
+        st.doc.library.symbols.len() + st.doc.library.bitmaps.len() + st.doc.library.sounds.len()
+    ));
     ui.label(format!("Undo steps: {}", st.history.undo_labels().count()));
 }
 
@@ -1516,11 +1585,14 @@ fn highlight(ui: &egui::Ui, code: &str) -> egui::text::LayoutJob {
     let num = if dark { Color32::from_rgb(0xb5, 0xce, 0xa8) } else { Color32::from_rgb(0x09, 0x86, 0x58) };
     let api = if dark { Color32::from_rgb(0xdc, 0xdc, 0xaa) } else { Color32::from_rgb(0x79, 0x5e, 0x26) };
     let normal = ui.visuals().text_color();
-    let keywords = ["let", "const", "fn", "if", "else", "while", "loop", "for", "in", "return", "break", "continue", "true", "false", "this", "switch", "do", "until", "import", "export", "as", "private"];
+    let keywords = [
+        "let", "const", "fn", "if", "else", "while", "loop", "for", "in", "return", "break", "continue", "true", "false", "this", "switch",
+        "do", "until", "import", "export", "as", "private",
+    ];
     let apis = animara_scripting::API_FUNCTIONS;
     let bytes: Vec<char> = code.chars().collect();
     let mut i = 0;
-    let mut push = |job: &mut egui::text::LayoutJob, s: String, c: Color32| job.append(&s, 0.0, egui::TextFormat::simple(font.clone(), c));
+    let push = |job: &mut egui::text::LayoutJob, s: String, c: Color32| job.append(&s, 0.0, egui::TextFormat::simple(font.clone(), c));
     while i < bytes.len() {
         let c = bytes[i];
         if c == '/' && bytes.get(i + 1) == Some(&'/') {
@@ -1576,14 +1648,14 @@ pub fn actions_panel(core: &mut AppCore, ui: &mut egui::Ui) {
         ui.menu_button("Code Snippets", |ui| {
             for (name, code) in animara_scripting::SNIPPETS {
                 if ui.button(*name).clicked() {
-                    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("snippet"), code.to_string()));
+                    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("snippet"), code.to_string()));
                     ui.close();
                 }
             }
         });
     });
     let mut script = k.script.clone();
-    if let Some(sn) = ui.ctx().data_mut(|d| d.remove_temp::<String>(egui::Id::new("snippet"))) {
+    if let Some(sn) = ui.ctx().data_mut(|d| d.remove_temp::<String>(egui::Id::unique("snippet"))) {
         if !script.is_empty() && !script.ends_with('\n') {
             script.push('\n');
         }
@@ -1627,7 +1699,7 @@ pub fn motion_editor(core: &mut AppCore, ui: &mut egui::Ui) {
         ui.weak("Select a tweened frame to edit its easing curves.");
         return;
     };
-    let prop_id = egui::Id::new("me_prop");
+    let prop_id = egui::Id::unique("me_prop");
     let mut prop = ui.ctx().data(|d| d.get_temp::<String>(prop_id)).unwrap_or_else(|| "all".into());
     ui.horizontal(|ui| {
         for p in ["all", "position", "rotation", "scale", "color", "filters"] {
@@ -1651,20 +1723,26 @@ pub fn motion_editor(core: &mut AppCore, ui: &mut egui::Ui) {
     let painter = ui.painter_at(rect.expand(4.0));
     painter.rect_filled(rect, 2.0, ui.visuals().extreme_bg_color);
     let inner = rect.shrink(12.0);
-    let to_screen = |x: f64, y: f64| egui::pos2(inner.min.x + inner.width() * x as f32, inner.max.y - inner.height() * 0.7 * y as f32 - inner.height() * 0.15);
-    let from_screen = |p: egui::Pos2| ((p.x - inner.min.x) as f64 / inner.width() as f64, ((inner.max.y - inner.height() * 0.15 - p.y) / (inner.height() * 0.7)) as f64);
+    let to_screen = |x: f64, y: f64| {
+        egui::pos2(inner.min.x + inner.width() * x as f32, inner.max.y - inner.height() * 0.7 * y as f32 - inner.height() * 0.15)
+    };
+    let from_screen = |p: egui::Pos2| {
+        ((p.x - inner.min.x) as f64 / inner.width() as f64, ((inner.max.y - inner.height() * 0.15 - p.y) / (inner.height() * 0.7)) as f64)
+    };
     painter.line_segment([to_screen(0.0, 0.0), to_screen(1.0, 0.0)], egui::Stroke::new(1.0, Color32::from_gray(90)));
     painter.line_segment([to_screen(0.0, 1.0), to_screen(1.0, 1.0)], egui::Stroke::new(1.0, Color32::from_gray(90)));
-    let pts: Vec<egui::Pos2> = (0..=100).map(|i| {
-        let x = i as f64 / 100.0;
-        to_screen(x, ease.eval(x))
-    }).collect();
+    let pts: Vec<egui::Pos2> = (0..=100)
+        .map(|i| {
+            let x = i as f64 / 100.0;
+            to_screen(x, ease.eval(x))
+        })
+        .collect();
     painter.add(egui::Shape::line(pts, egui::Stroke::new(2.0, Color32::from_rgb(0x2b, 0x9c, 0xff))));
     // Playhead within the tween.
     let tpos = (f - k.start) as f64 / k.duration.max(1) as f64;
     painter.line_segment([to_screen(tpos, -0.2), to_screen(tpos, 1.2)], egui::Stroke::new(1.0, Color32::from_rgb(0xd0, 0x40, 0x40)));
     if let Ease::Custom { points } = ease {
-        let mut drag_idx = ui.ctx().data(|d| d.get_temp::<usize>(egui::Id::new("me_drag")));
+        let mut drag_idx = ui.ctx().data(|d| d.get_temp::<usize>(egui::Id::unique("me_drag")));
         for (i, p) in points.iter().enumerate() {
             painter.circle(to_screen(p.x, p.y), 5.0, Color32::WHITE, egui::Stroke::new(1.0, Color32::BLACK));
             let h1 = to_screen(p.x + p.in_handle.0, p.y + p.in_handle.1);
@@ -1698,10 +1776,10 @@ pub fn motion_editor(core: &mut AppCore, ui: &mut egui::Ui) {
         }
         match drag_idx {
             Some(i) => {
-                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("me_drag"), i));
+                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("me_drag"), i));
             }
             None => {
-                ui.ctx().data_mut(|d| d.remove_temp::<usize>(egui::Id::new("me_drag")));
+                ui.ctx().data_mut(|d| d.remove_temp::<usize>(egui::Id::unique("me_drag")));
             }
         }
         ui.weak("Double-click to add/remove points; drag to shape the curve.");
@@ -1813,7 +1891,7 @@ pub fn components_panel(core: &mut AppCore, ui: &mut egui::Ui) {
 }
 
 pub fn assets_panel(core: &mut AppCore, ui: &mut egui::Ui) {
-    let tab_id = egui::Id::new("assets_tab");
+    let tab_id = egui::Id::unique("assets_tab");
     let mut custom = ui.ctx().data(|d| d.get_temp::<bool>(tab_id)).unwrap_or(false);
     ui.horizontal(|ui| {
         ui.selectable_value(&mut custom, false, "Default");
@@ -1839,7 +1917,9 @@ pub fn assets_panel(core: &mut AppCore, ui: &mut egui::Ui) {
         }
     } else {
         let dir = crate::core::Settings::config_dir().join("assets");
-        let saved: Vec<std::path::PathBuf> = std::fs::read_dir(&dir).map(|r| r.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "anim")).collect()).unwrap_or_default();
+        let saved: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)
+            .map(|r| r.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "anim")).collect())
+            .unwrap_or_default();
         if saved.is_empty() {
             ui.weak("No custom assets yet. Select a symbol in the Library and click “Save selected symbol as asset”.");
         }

@@ -2,8 +2,8 @@
 
 use crate::state::{DocState, EditLevel, FrameSel};
 use animara_document::{
-    ColorEffect, Element, ElementKind, FrameClipboard, Keyframe, Layer, LayerKind, Scene, Shape, ShapePath, Symbol,
-    SymbolInstance, SymbolKind, TextAlign, Tween, TweenKind,
+    ColorEffect, Element, ElementKind, FrameClipboard, Keyframe, Layer, LayerKind, Scene, Shape, ShapePath, Symbol, SymbolInstance,
+    SymbolKind, TextAlign, Tween, TweenKind,
 };
 use animara_geometry::{Affine, BoolOp, FillRule, Rect, Vec2, boolean_op};
 use animara_renderer::bounds::element_bounds;
@@ -242,8 +242,10 @@ pub fn break_apart(st: &mut DocState, auto_key: bool) {
                                 for c in els {
                                     let mut c = c.duplicate();
                                     c.transform = e.transform * c.transform;
-                                    if let (ElementKind::Shape(s), ColorEffect::Tint { .. } | ColorEffect::Brightness { .. } | ColorEffect::Alpha { .. }) =
-                                        (&mut c.kind, inst.color_effect)
+                                    if let (
+                                        ElementKind::Shape(s),
+                                        ColorEffect::Tint { .. } | ColorEffect::Brightness { .. } | ColorEffect::Alpha { .. },
+                                    ) = (&mut c.kind, inst.color_effect)
                                     {
                                         let ct = inst.color_effect.to_transform();
                                         for p in &mut s.paths {
@@ -372,7 +374,12 @@ pub fn new_symbol(st: &mut DocState, name: &str, kind: SymbolKind) {
 /// Enter symbol editing mode (`in_place` = instance transform for edit-in-place).
 pub fn enter_symbol(st: &mut DocState, symbol: animara_document::Id, in_place: Option<Affine>) {
     let parent_frame = st.frame;
-    st.stack.push(EditLevel { symbol, instance_transform: in_place.unwrap_or(Affine::IDENTITY), in_place: in_place.is_some(), parent_frame });
+    st.stack.push(EditLevel {
+        symbol,
+        instance_transform: in_place.unwrap_or(Affine::IDENTITY),
+        in_place: in_place.is_some(),
+        parent_frame,
+    });
     st.frame = 0;
     st.layer = 0;
     st.selection.clear();
@@ -509,14 +516,13 @@ pub fn combine(st: &mut DocState, op: BoolOp, auto_key: bool) {
     let ids: Vec<_> = shapes.iter().map(|(_, e)| e.id).collect();
     st.checkpoint("Combine Objects");
     let li = shapes[0].0;
-    let mut ne = Element::shape(vec![ShapePath {
+    let ne = Element::shape(vec![ShapePath {
         path: result.0,
         fill: result.1.or(Some(animara_document::Fill::solid(animara_document::Color::BLACK))),
         stroke: result.2,
         fill_rule: FillRule::NonZero,
         primitive: None,
     }]);
-    ne.pivot = ne.pivot;
     let nid = ne.id;
     for l in 0..st.timeline().layers.len() {
         if !st.layer_elements(l).iter().any(|e| ids.contains(&e.id)) {
@@ -551,7 +557,7 @@ pub fn reshape(st: &mut DocState, mode: u8, auto_key: bool) {
         for sp in s.paths.drain(..) {
             let closed = sp.path.subpaths().iter().all(|p| p.closed);
             match mode {
-                0 | 1 | 2 => {
+                0..=2 => {
                     let mut np = animara_geometry::Path::new();
                     for (pts, cl) in sp.path.flatten(0.5) {
                         let tol = match mode {
@@ -647,7 +653,9 @@ pub fn insert_keyframe(st: &mut DocState, blank: bool) {
             let content = {
                 let tl = st.timeline();
                 let l = &tl.layers[li];
-                l.keyframe_at(f0).filter(|k| k.tween.is_some() && k.start != f0).map(|_| animara_animation::layer_elements_at(&st.doc, tl, li, f0).0)
+                l.keyframe_at(f0)
+                    .filter(|k| k.tween.is_some() && k.start != f0)
+                    .map(|_| animara_animation::layer_elements_at(&st.doc, tl, li, f0).0)
             };
             let l = &mut st.timeline_mut().layers[li];
             l.insert_keyframe(f0, content);
@@ -686,9 +694,7 @@ pub fn create_tween(st: &mut DocState, kind: Option<TweenKind>) {
         }
         if kind == Some(TweenKind::Motion) {
             // Motion tweens need a single symbol instance: convert loose shapes automatically.
-            let needs_symbol = st
-                .timeline()
-                .layers[li]
+            let needs_symbol = st.timeline().layers[li]
                 .keyframe_at(f0)
                 .is_some_and(|k| k.elements.iter().any(|e| !matches!(e.kind, ElementKind::Instance(_))));
             if needs_symbol {
@@ -719,7 +725,8 @@ pub fn create_tween(st: &mut DocState, kind: Option<TweenKind>) {
 
 pub fn copy_frames(st: &DocState, clip: &mut Clipboard) {
     let (layers, f0, f1) = sel_layers_and_frames(st);
-    clip.frames = layers.into_iter().filter(|&li| li < st.timeline().layers.len()).map(|li| st.timeline().layers[li].copy_frames(f0, f1)).collect();
+    clip.frames =
+        layers.into_iter().filter(|&li| li < st.timeline().layers.len()).map(|li| st.timeline().layers[li].copy_frames(f0, f1)).collect();
 }
 
 pub fn paste_frames(st: &mut DocState, clip: &Clipboard) {

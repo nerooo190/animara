@@ -110,11 +110,15 @@ fn onion(i: DisplayItem, outline: bool, c: Color) -> DisplayItem {
         return i;
     }
     match i {
-        DisplayItem::Shape { shape, transform, color, source, .. } => DisplayItem::Shape { shape, transform, color, outline: Some(c), source },
+        DisplayItem::Shape { shape, transform, color, source, .. } => {
+            DisplayItem::Shape { shape, transform, color, outline: Some(c), source }
+        }
         DisplayItem::Group { items, filters, blend, scale, source } => {
             DisplayItem::Group { items: items.into_iter().map(|x| onion(x, true, c)).collect(), filters, blend, scale, source }
         }
-        DisplayItem::Masked { mask, content } => DisplayItem::Masked { mask, content: content.into_iter().map(|x| onion(x, true, c)).collect() },
+        DisplayItem::Masked { mask, content } => {
+            DisplayItem::Masked { mask, content: content.into_iter().map(|x| onion(x, true, c)).collect() }
+        }
         o => o,
     }
 }
@@ -139,7 +143,8 @@ fn update_texture(core: &mut AppCore, ui: &egui::Ui, canvas: egui::Rect) {
     }
     st.tex_key = key;
     let Some(mut pm) = tiny_skia::Pixmap::new(pw, ph) else { return };
-    let paste = if dark { tiny_skia::Color::from_rgba8(0x3a, 0x3a, 0x3a, 255) } else { tiny_skia::Color::from_rgba8(0xd8, 0xd8, 0xd8, 255) };
+    let paste =
+        if dark { tiny_skia::Color::from_rgba8(0x3a, 0x3a, 0x3a, 255) } else { tiny_skia::Color::from_rgba8(0xd8, 0xd8, 0xd8, 255) };
     pm.fill(paste);
     let view_px = Affine::scale(ppp, ppp) * Affine::translate(st.view.pan.x, st.view.pan.y) * Affine::scale(st.view.zoom, st.view.zoom);
     let (parent_items, mut items) = authoring_items(st, outlines);
@@ -152,7 +157,9 @@ fn update_texture(core: &mut AppCore, ui: &egui::Ui, canvas: egui::Rect) {
     if let Some(r) = tiny_skia::Rect::from_xywh(0.0, 0.0, stage.width() as f32, stage.height() as f32) {
         let mut shadow = tiny_skia::Paint::default();
         shadow.set_color(tiny_skia::Color::from_rgba8(0, 0, 0, 60));
-        let sh = Affine::scale(ppp, ppp) * Affine::translate(st.view.pan.x + 3.0, st.view.pan.y + 3.0) * Affine::scale(st.view.zoom, st.view.zoom);
+        let sh = Affine::scale(ppp, ppp)
+            * Affine::translate(st.view.pan.x + 3.0, st.view.pan.y + 3.0)
+            * Affine::scale(st.view.zoom, st.view.zoom);
         pm.fill_rect(r, &shadow, animara_renderer::to_ts(&sh), None);
         let mut paint = tiny_skia::Paint::default();
         paint.set_color(animara_renderer::ts_color(st.doc.background));
@@ -313,7 +320,12 @@ fn handle_at(st: &DocState, view: &Affine, sp: Vec2) -> Option<Handle> {
         }
     }
     // Edges (between handles) skew.
-    let edges = [((0.0, 0.0), (1.0, 0.0), true, 0.0), ((0.0, 1.0), (1.0, 1.0), true, 1.0), ((0.0, 0.0), (0.0, 1.0), false, 0.0), ((1.0, 0.0), (1.0, 1.0), false, 1.0)];
+    let edges = [
+        ((0.0, 0.0), (1.0, 0.0), true, 0.0),
+        ((0.0, 1.0), (1.0, 1.0), true, 1.0),
+        ((0.0, 0.0), (0.0, 1.0), false, 0.0),
+        ((1.0, 0.0), (1.0, 1.0), false, 1.0),
+    ];
     for ((u0, v0), (u1, v1), horiz, side) in edges {
         let a = to_screen(u0, v0);
         let b = to_screen(u1, v1);
@@ -341,10 +353,9 @@ fn new_shape_element(core: &AppCore, path: Path, closed: bool, primitive: Option
         f.set_matrix(Affine::translate(-c.x, -c.y) * f.matrix().unwrap_or(Affine::IDENTITY));
     }
     let primitive = primitive.map(|p| match p {
-        Primitive::Rect { rect, corner_radius } => Primitive::Rect {
-            rect: Rect::new(rect.min.x - c.x, rect.min.y - c.y, rect.max.x - c.x, rect.max.y - c.y),
-            corner_radius,
-        },
+        Primitive::Rect { rect, corner_radius } => {
+            Primitive::Rect { rect: Rect::new(rect.min.x - c.x, rect.min.y - c.y, rect.max.x - c.x, rect.max.y - c.y), corner_radius }
+        }
         Primitive::Oval { rect, start_angle, end_angle, inner_radius } => Primitive::Oval {
             rect: Rect::new(rect.min.x - c.x, rect.min.y - c.y, rect.max.x - c.x, rect.max.y - c.y),
             start_angle,
@@ -560,19 +571,16 @@ fn edit_bar(core: &mut AppCore, ui: &mut egui::Ui) {
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let mut z = st.view.zoom * 100.0;
-                egui::ComboBox::from_id_salt("zoom")
-                    .selected_text(format!("{:.0}%", z))
-                    .width(70.0)
-                    .show_ui(ui, |ui| {
-                        if ui.selectable_label(false, "Fit in Window").clicked() {
-                            fit_now = true;
+                egui::ComboBox::from_id_salt("zoom").selected_text(format!("{:.0}%", z)).width(70.0).show_ui(ui, |ui| {
+                    if ui.selectable_label(false, "Fit in Window").clicked() {
+                        fit_now = true;
+                    }
+                    for p in [25.0, 50.0, 64.0, 100.0, 200.0, 400.0, 800.0] {
+                        if ui.selectable_value(&mut z, p, format!("{p:.0}%")).clicked() {
+                            zoom_to = Some(p / 100.0);
                         }
-                        for p in [25.0, 50.0, 64.0, 100.0, 200.0, 400.0, 800.0] {
-                            if ui.selectable_value(&mut z, p, format!("{p:.0}%")).clicked() {
-                                zoom_to = Some(p / 100.0);
-                            }
-                        }
-                    });
+                    }
+                });
                 ui.menu_button("◆", |ui| {
                     ui.label("Edit Symbol");
                     for s in &st.doc.library.symbols {
@@ -662,12 +670,16 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
         let col = c32(doc.grid.color);
         let mut x = 0.0;
         while x <= doc.width {
-            painter.line_segment([to_pos(view.apply(Vec2::new(x, 0.0))), to_pos(view.apply(Vec2::new(x, doc.height)))], EStroke::new(1.0, col));
+            painter.line_segment(
+                [to_pos(view.apply(Vec2::new(x, 0.0))), to_pos(view.apply(Vec2::new(x, doc.height)))],
+                EStroke::new(1.0, col),
+            );
             x += s;
         }
         let mut y = 0.0;
         while y <= doc.height {
-            painter.line_segment([to_pos(view.apply(Vec2::new(0.0, y))), to_pos(view.apply(Vec2::new(doc.width, y)))], EStroke::new(1.0, col));
+            painter
+                .line_segment([to_pos(view.apply(Vec2::new(0.0, y))), to_pos(view.apply(Vec2::new(doc.width, y)))], EStroke::new(1.0, col));
             y += s;
         }
     }
@@ -739,13 +751,20 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
     }
     let show_handles = matches!(core.tool, Tool::FreeTransform) || (matches!(core.tool, Tool::Select) && sel.len() == 1);
     if show_handles && let Some((frame, local)) = selection_box(st) {
-        let corner = |u: f64, v: f64| to_pos(view.apply(frame.apply(Vec2::new(local.min.x + local.width() * u, local.min.y + local.height() * v))));
+        let corner =
+            |u: f64, v: f64| to_pos(view.apply(frame.apply(Vec2::new(local.min.x + local.width() * u, local.min.y + local.height() * v))));
         let pts = [corner(0.0, 0.0), corner(1.0, 0.0), corner(1.0, 1.0), corner(0.0, 1.0)];
         painter.add(egui::Shape::closed_line(pts.to_vec(), EStroke::new(1.0, SEL_COLOR)));
         if core.tool == Tool::FreeTransform {
             for (u, v) in [(0.0, 0.0), (0.5, 0.0), (1.0, 0.0), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0), (0.0, 1.0), (0.0, 0.5)] {
                 let p = corner(u, v);
-                painter.rect(egui::Rect::from_center_size(p, egui::vec2(HANDLE, HANDLE)), 0.0, Color32::WHITE, EStroke::new(1.0, Color32::BLACK), egui::StrokeKind::Middle);
+                painter.rect(
+                    egui::Rect::from_center_size(p, egui::vec2(HANDLE, HANDLE)),
+                    0.0,
+                    Color32::WHITE,
+                    EStroke::new(1.0, Color32::BLACK),
+                    egui::StrokeKind::Middle,
+                );
             }
             if let Some(pv) = selection_pivot(st) {
                 let p = to_pos(view.apply(pv));
@@ -762,18 +781,24 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
                     let mut prev = Vec2::ZERO;
                     for (ci, c) in sp.path.cmds.iter().enumerate() {
                         let selected = st.anchor_sel == Some((e.id, pi, ci));
-                        if let PathCmd::CubicTo(c1, c2, p) = c {
-                            if selected || st.anchor_sel.is_some_and(|a| a.0 == e.id && a.1 == pi && a.2 + 1 == ci) {
-                                for (h, anchor) in [(*c1, prev), (*c2, *p)] {
-                                    painter.line_segment([to_pos(m.apply(anchor)), to_pos(m.apply(h))], EStroke::new(1.0, SEL_COLOR));
-                                    painter.circle_filled(to_pos(m.apply(h)), 3.0, SEL_COLOR);
-                                }
+                        if let PathCmd::CubicTo(c1, c2, p) = c
+                            && (selected || st.anchor_sel.is_some_and(|a| a.0 == e.id && a.1 == pi && a.2 + 1 == ci))
+                        {
+                            for (h, anchor) in [(*c1, prev), (*c2, *p)] {
+                                painter.line_segment([to_pos(m.apply(anchor)), to_pos(m.apply(h))], EStroke::new(1.0, SEL_COLOR));
+                                painter.circle_filled(to_pos(m.apply(h)), 3.0, SEL_COLOR);
                             }
                         }
                         if let Some(p) = c.end() {
                             let sp_ = to_pos(m.apply(p));
                             let r = egui::Rect::from_center_size(sp_, egui::vec2(6.0, 6.0));
-                            painter.rect(r, 0.0, if selected { SEL_COLOR } else { Color32::WHITE }, EStroke::new(1.0, SEL_COLOR), egui::StrokeKind::Middle);
+                            painter.rect(
+                                r,
+                                0.0,
+                                if selected { SEL_COLOR } else { Color32::WHITE },
+                                EStroke::new(1.0, SEL_COLOR),
+                                egui::StrokeKind::Middle,
+                            );
                             prev = p;
                         }
                     }
@@ -793,14 +818,23 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
         let ry = to_pos(m.apply(Vec2::new(0.0, 1.0)));
         painter.circle_stroke(c, 5.0, EStroke::new(1.5, SEL_COLOR));
         painter.line_segment([c, rx], EStroke::new(1.0, SEL_COLOR));
-        painter.rect(egui::Rect::from_center_size(rx, egui::vec2(8.0, 8.0)), 0.0, Color32::WHITE, EStroke::new(1.0, SEL_COLOR), egui::StrokeKind::Middle);
+        painter.rect(
+            egui::Rect::from_center_size(rx, egui::vec2(8.0, 8.0)),
+            0.0,
+            Color32::WHITE,
+            EStroke::new(1.0, SEL_COLOR),
+            egui::StrokeKind::Middle,
+        );
         painter.circle(ry, 5.0, Color32::WHITE, EStroke::new(1.0, SEL_COLOR));
         if matches!(f, Fill::Radial { .. }) {
             let pts: Vec<Pos2> = (0..=48).map(|i| to_pos(m.apply(Vec2::from_angle(i as f64 / 48.0 * std::f64::consts::TAU)))).collect();
             painter.add(egui::Shape::line(pts, EStroke::new(1.0, SEL_COLOR.gamma_multiply(0.6))));
         } else {
             for x in [-1.0, 1.0] {
-                painter.line_segment([to_pos(m.apply(Vec2::new(x, -1.0))), to_pos(m.apply(Vec2::new(x, 1.0)))], EStroke::new(1.0, SEL_COLOR.gamma_multiply(0.6)));
+                painter.line_segment(
+                    [to_pos(m.apply(Vec2::new(x, -1.0))), to_pos(m.apply(Vec2::new(x, 1.0)))],
+                    EStroke::new(1.0, SEL_COLOR.gamma_multiply(0.6)),
+                );
             }
         }
     }
@@ -852,13 +886,21 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
                     let t = &core.settings.tools;
                     let rad = start.distance(p_now);
                     let rot = (p_now - *start).angle();
-                    if t.poly_star { Path::star(*start, rad, t.poly_sides, t.star_ratio, rot) } else { Path::polygon(*start, rad, t.poly_sides, rot) }
+                    if t.poly_star {
+                        Path::star(*start, rad, t.poly_sides, t.star_ratio, rot)
+                    } else {
+                        Path::polygon(*start, rad, t.poly_sides, rot)
+                    }
                 }
                 _ => Path::rounded_rect(r, core.settings.tools.rect_radius),
             };
             for (pts, closed) in path.transform(view).flatten(0.5) {
                 let pts: Vec<Pos2> = pts.into_iter().map(to_pos).collect();
-                painter.add(if closed { egui::Shape::closed_line(pts, EStroke::new(1.0, col)) } else { egui::Shape::line(pts, EStroke::new(1.0, col)) });
+                painter.add(if closed {
+                    egui::Shape::closed_line(pts, EStroke::new(1.0, col))
+                } else {
+                    egui::Shape::line(pts, EStroke::new(1.0, col))
+                });
             }
         }
         Drag::TextBox { start } => {
@@ -866,7 +908,10 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
             painter.rect_stroke(r, 0.0, EStroke::new(1.0, SEL_COLOR), egui::StrokeKind::Middle);
         }
         Drag::Bone { start, .. } => {
-            painter.line_segment([to_pos(view.apply(*start)), to_pos(view.apply(p_now))], EStroke::new(3.0, Color32::from_rgb(0xff, 0xb3, 0x00)));
+            painter.line_segment(
+                [to_pos(view.apply(*start)), to_pos(view.apply(p_now))],
+                EStroke::new(3.0, Color32::from_rgb(0xff, 0xb3, 0x00)),
+            );
         }
         _ => {}
     }
@@ -887,7 +932,13 @@ fn draw_overlays(core: &AppCore, painter: &egui::Painter, view: &Affine, canvas:
             painter.add(egui::Shape::line(poly.into_iter().map(to_pos).collect(), EStroke::new(1.0, SEL_COLOR)));
         }
         for (a, h) in pts {
-            painter.rect(egui::Rect::from_center_size(to_pos(view.apply(*a)), egui::vec2(6.0, 6.0)), 0.0, Color32::WHITE, EStroke::new(1.0, SEL_COLOR), egui::StrokeKind::Middle);
+            painter.rect(
+                egui::Rect::from_center_size(to_pos(view.apply(*a)), egui::vec2(6.0, 6.0)),
+                0.0,
+                Color32::WHITE,
+                EStroke::new(1.0, SEL_COLOR),
+                egui::StrokeKind::Middle,
+            );
             if h.distance(*a) > 0.5 {
                 painter.line_segment([to_pos(view.apply(*a)), to_pos(view.apply(*h))], EStroke::new(1.0, SEL_COLOR));
                 painter.circle_filled(to_pos(view.apply(*h)), 3.0, SEL_COLOR);
@@ -926,13 +977,25 @@ fn draw_text_live(painter: &egui::Painter, view: &Affine, m: &Affine, t: &TextEl
     let corners: Vec<Pos2> = b.corners().iter().map(|p| to_pos(full.apply(*p))).collect();
     painter.add(egui::Shape::closed_line(corners, EStroke::new(1.0, SEL_COLOR)));
     let (x, top, h) = layout.caret(cursor);
-    painter.line_segment([to_pos(full.apply(Vec2::new(x, top))), to_pos(full.apply(Vec2::new(x, top + h)))], EStroke::new(1.5, Color32::BLACK));
+    painter.line_segment(
+        [to_pos(full.apply(Vec2::new(x, top))), to_pos(full.apply(Vec2::new(x, top + h)))],
+        EStroke::new(1.5, Color32::BLACK),
+    );
 }
 
 #[allow(clippy::too_many_arguments)]
-fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, view: &Affine, inv_view: &Affine, canvas: egui::Rect, full: egui::Rect) {
-    let (pointer, modifiers, scroll, zoom_delta, events) =
-        ui.input(|i| (i.pointer.interact_pos().or(i.pointer.hover_pos()), i.modifiers, i.smooth_scroll_delta, i.zoom_delta(), i.events.clone()));
+fn handle_input(
+    core: &mut AppCore,
+    ui: &mut egui::Ui,
+    resp: &egui::Response,
+    view: &Affine,
+    inv_view: &Affine,
+    canvas: egui::Rect,
+    full: egui::Rect,
+) {
+    let (pointer, modifiers, scroll, zoom_delta, events) = ui.input(|i| {
+        (i.pointer.interact_pos().or(i.pointer.hover_pos()), i.modifiers, i.smooth_scroll_delta, i.zoom_delta(), i.events.clone())
+    });
     let Some(pointer) = pointer else { return };
     let p_raw = inv_view.apply(to_vec(pointer));
     // Pen pressure from touch/stylus events where the platform provides it.
@@ -944,7 +1007,11 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
             _ => None,
         })
         .unwrap_or(1.0);
-    let ignore: Vec<_> = if matches!(core.tstate.drag, Drag::Move { .. } | Drag::Transform { .. }) { core.doc().unwrap().selection.clone() } else { Vec::new() };
+    let ignore: Vec<_> = if matches!(core.tstate.drag, Drag::Move { .. } | Drag::Transform { .. }) {
+        core.doc().unwrap().selection.clone()
+    } else {
+        Vec::new()
+    };
     let p = snap(core, core.doc().unwrap(), p_raw, view, &ignore);
     core.tstate.last_pointer_doc = p;
     let hovered = resp.hovered() || resp.dragged();
@@ -1014,7 +1081,12 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
                     let m = st.context_transform() * e.transform;
                     if let Some(inv) = m.invert() {
                         let lp = inv.apply(p);
-                        let best = s.paths.iter().enumerate().filter_map(|(pi, sp)| sp.path.nearest_segment(lp).map(|n| (pi, n))).min_by(|a, b| a.1.2.total_cmp(&b.1.2));
+                        let best = s
+                            .paths
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(pi, sp)| sp.path.nearest_segment(lp).map(|n| (pi, n)))
+                            .min_by(|a, b| a.1.2.total_cmp(&b.1.2));
                         if let Some((pi, (ci, t, _))) = best {
                             st.checkpoint("Add Anchor Point");
                             let id = e.id;
@@ -1087,7 +1159,18 @@ fn handle_input(core: &mut AppCore, ui: &mut egui::Ui, resp: &egui::Response, vi
 }
 
 #[allow(clippy::too_many_arguments)]
-fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, shift: bool, alt: bool, is_click: bool, auto_key: bool, pressure: f64) {
+fn press(
+    core: &mut AppCore,
+    tool: Tool,
+    origin: Vec2,
+    p: Vec2,
+    view: &Affine,
+    shift: bool,
+    alt: bool,
+    is_click: bool,
+    auto_key: bool,
+    pressure: f64,
+) {
     let tol = 3.0 / view.mean_scale();
     match tool {
         Tool::Select => {
@@ -1127,7 +1210,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
                         } else {
                             st.checkpoint("Move");
                         }
-                        core.tstate.drag = Drag::Move { last: origin, started: true };
+                        core.tstate.drag = Drag::Move { last: origin };
                     }
                 }
                 None => {
@@ -1162,7 +1245,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
                     }
                     if !is_click {
                         st.checkpoint("Move");
-                        core.tstate.drag = Drag::Move { last: origin, started: true };
+                        core.tstate.drag = Drag::Move { last: origin };
                     }
                 }
                 None => {
@@ -1196,12 +1279,12 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
                                 if view.apply(m.apply(q)).distance(view.apply(origin)) < 6.0 {
                                     st.anchor_sel = Some((e.id, pi, ci));
                                     st.checkpoint("Edit Anchor");
-                                    if alt && ctl.is_none() {
-                                        if let Some(el) = st.element_mut(e.id, auto_key)
-                                            && let ElementKind::Shape(s) = &mut el.kind
-                                        {
-                                            s.paths[pi].path.convert_to_curve(ci);
-                                        }
+                                    if alt
+                                        && ctl.is_none()
+                                        && let Some(el) = st.element_mut(e.id, auto_key)
+                                        && let ElementKind::Shape(s) = &mut el.kind
+                                    {
+                                        s.paths[pi].path.convert_to_curve(ci);
                                     }
                                     core.tstate.drag = Drag::Anchor { element: e.id, path: pi, cmd: ci, control: ctl, last: origin };
                                     return;
@@ -1218,7 +1301,7 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
                     st.anchor_sel = None;
                     if !is_click {
                         st.checkpoint("Move");
-                        core.tstate.drag = Drag::Move { last: origin, started: true };
+                        core.tstate.drag = Drag::Move { last: origin };
                     }
                 }
                 None => {
@@ -1240,7 +1323,8 @@ fn press(core: &mut AppCore, tool: Tool, origin: Vec2, p: Vec2, view: &Affine, s
             let ctx = st.context_transform();
             if let Some((_, e)) = st.selected().first().cloned()
                 && let ElementKind::Shape(s) = &e.kind
-                && let Some((pi, f)) = s.paths.iter().enumerate().find_map(|(i, p)| p.fill.as_ref().filter(|f| f.matrix().is_some()).map(|f| (i, f)))
+                && let Some((pi, f)) =
+                    s.paths.iter().enumerate().find_map(|(i, p)| p.fill.as_ref().filter(|f| f.matrix().is_some()).map(|f| (i, f)))
             {
                 let gm = f.matrix().unwrap();
                 let m = *view * ctx * e.transform * gm;
@@ -1432,8 +1516,16 @@ fn drag(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, alt
                     } else {
                         Vec2::new(local.min.x + local.width() * (1.0 - u), local.min.y + local.height() * (1.0 - v))
                     };
-                    let mut sx = if (u - 0.5).abs() > 0.1 { (q.x - anchor_local.x) / (q0.x - anchor_local.x).abs().max(1e-6).copysign(q0.x - anchor_local.x) } else { 1.0 };
-                    let mut sy = if (v - 0.5).abs() > 0.1 { (q.y - anchor_local.y) / (q0.y - anchor_local.y).abs().max(1e-6).copysign(q0.y - anchor_local.y) } else { 1.0 };
+                    let mut sx = if (u - 0.5).abs() > 0.1 {
+                        (q.x - anchor_local.x) / (q0.x - anchor_local.x).abs().max(1e-6).copysign(q0.x - anchor_local.x)
+                    } else {
+                        1.0
+                    };
+                    let mut sy = if (v - 0.5).abs() > 0.1 {
+                        (q.y - anchor_local.y) / (q0.y - anchor_local.y).abs().max(1e-6).copysign(q0.y - anchor_local.y)
+                    } else {
+                        1.0
+                    };
                     if shift && (u - 0.5).abs() > 0.1 && (v - 0.5).abs() > 0.1 {
                         let s = sx.abs().max(sy.abs());
                         sx = s * sx.signum();
@@ -1517,7 +1609,10 @@ fn drag(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, alt
                         let a0 = (ls - center).angle();
                         let a1 = (lp - center).angle();
                         let s = (lp - center).length() / (ls - center).length().max(1e-6);
-                        Affine::around(Affine::rotate(a1 - a0), center) * Affine::around(Affine::scale(1.0, 1.0), center) * original * Affine::scale(s, 1.0)
+                        Affine::around(Affine::rotate(a1 - a0), center)
+                            * Affine::around(Affine::scale(1.0, 1.0), center)
+                            * original
+                            * Affine::scale(s, 1.0)
                     }
                     _ => {
                         let s = (lp - center).length() / (ls - center).length().max(1e-6);
@@ -1561,9 +1656,7 @@ fn drag(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, alt
                 let (w, h) = (st.doc.width, st.doc.height);
                 let layer = &mut st.timeline_mut().layers[ci];
                 let cur = animara_animation::camera_at(layer, f).unwrap_or(animara_document::CameraState::centered(w, h));
-                if !layer.is_keyframe(f) && f < layer.end() {
-                    layer.insert_keyframe(f, None);
-                } else if f >= layer.end() {
+                if !layer.is_keyframe(f) {
                     layer.insert_keyframe(f, None);
                 }
                 if let Some(k) = layer.keyframe_at_mut(f) {
@@ -1587,7 +1680,8 @@ fn drag(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, alt
                 // Inverse-distance weighting: points follow the dragged pin, other pins stay fixed.
                 let weight = |q: Vec2| -> f64 {
                     let wd = 1.0 / (q.distance(src).powi(2) + 1e-3);
-                    let wo: f64 = pins.iter().enumerate().filter(|(i, _)| *i != pin).map(|(_, o)| 1.0 / (q.distance(*o).powi(2) + 1e-3)).sum();
+                    let wo: f64 =
+                        pins.iter().enumerate().filter(|(i, _)| *i != pin).map(|(_, o)| 1.0 / (q.distance(*o).powi(2) + 1e-3)).sum();
                     if pins.len() == 1 { 1.0 } else { wd / (wd + wo) }
                 };
                 if let ElementKind::Shape(s) = &mut e.kind {
@@ -1696,12 +1790,14 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
                     let smooth_pts: Vec<Vec2> = if n > 3 {
                         let raw: Vec<Vec2> = pts.iter().map(|x| x.0).collect();
                         // Light smoothing of the stroke spine.
-                        (0..n).map(|i| {
-                            let a = raw[i.saturating_sub(1)];
-                            let b = raw[i];
-                            let c = raw[(i + 1).min(n - 1)];
-                            (a + b * 2.0 + c) / 4.0
-                        }).collect()
+                        (0..n)
+                            .map(|i| {
+                                let a = raw[i.saturating_sub(1)];
+                                let b = raw[i];
+                                let c = raw[(i + 1).min(n - 1)];
+                                (a + b * 2.0 + c) / 4.0
+                            })
+                            .collect()
                     } else {
                         pts.iter().map(|x| x.0).collect()
                     };
@@ -1734,7 +1830,8 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
                 }
                 Tool::Eraser => {
                     let ctx = core.doc().unwrap().context_transform();
-                    let samples: Vec<StrokeSample> = pts.iter().map(|(q, _, _)| StrokeSample { pos: ctx.apply(*q), width: t.eraser_size }).collect();
+                    let samples: Vec<StrokeSample> =
+                        pts.iter().map(|(q, _, _)| StrokeSample { pos: ctx.apply(*q), width: t.eraser_size }).collect();
                     let outline = animara_geometry::variable_width_outline(&samples);
                     erase(core, &outline, None);
                 }
@@ -1760,7 +1857,14 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
                 Tool::PolyStar => {
                     let rad = a.distance(b);
                     let rot = (b - a).angle();
-                    let prim = Primitive::Polygon { center: a, radius: rad, sides: t.poly_sides, star: t.poly_star, inner_ratio: t.star_ratio, rotation: rot };
+                    let prim = Primitive::Polygon {
+                        center: a,
+                        radius: rad,
+                        sides: t.poly_sides,
+                        star: t.poly_star,
+                        inner_ratio: t.star_ratio,
+                        rotation: rot,
+                    };
                     (prim.to_path(), true, Some(prim), "PolyStar")
                 }
                 _ => {
@@ -1823,8 +1927,14 @@ fn release(core: &mut AppCore, tool: Tool, p: Vec2, view: &Affine, shift: bool, 
                 k.pose = Some(rest);
             }
         }
-        Drag::Ik { .. } | Drag::Camera { .. } | Drag::Warp { .. } | Drag::Anchor { .. } | Drag::Gradient { .. } | Drag::Transform { .. } | Drag::Move { .. } => {}
-        Drag::Pan { .. } | Drag::None => {}
+        Drag::Ik { .. }
+        | Drag::Camera { .. }
+        | Drag::Warp { .. }
+        | Drag::Anchor { .. }
+        | Drag::Gradient { .. }
+        | Drag::Transform { .. }
+        | Drag::Move { .. } => {}
+        Drag::None => {}
     }
     if tool == Tool::Pen {
         core.tstate.pen.dragging = false;
@@ -1904,7 +2014,8 @@ fn bucket_like(core: &mut AppCore, tool: Tool, p: Vec2, tol: f64, auto_key: bool
                     core.settings.tools.fill_color = f.primary_color();
                     if let Some(stops) = f.stops() {
                         core.settings.tools.gradient = stops.to_vec();
-                        core.settings.tools.fill_kind = if matches!(f, Fill::Radial { .. }) { crate::tools::FillKind::Radial } else { crate::tools::FillKind::Linear };
+                        core.settings.tools.fill_kind =
+                            if matches!(f, Fill::Radial { .. }) { crate::tools::FillKind::Radial } else { crate::tools::FillKind::Linear };
                     } else {
                         core.settings.tools.fill_kind = crate::tools::FillKind::Solid;
                     }
@@ -1919,12 +2030,14 @@ fn bucket_like(core: &mut AppCore, tool: Tool, p: Vec2, tol: f64, auto_key: bool
         }
         (ElementKind::Shape(s), Tool::PaintBucket | Tool::InkBottle) => {
             let fill_tpl = core.settings.tools.clone();
-            let stroke = core.settings.tools.stroke().unwrap_or(animara_document::Stroke::solid(fill_tpl.stroke_color, fill_tpl.stroke_width));
+            let stroke =
+                core.settings.tools.stroke().unwrap_or(animara_document::Stroke::solid(fill_tpl.stroke_color, fill_tpl.stroke_width));
             let target = s.paths.iter().enumerate().rev().find(|(_, sp)| {
                 if tool == Tool::PaintBucket {
                     sp.path.contains(lp, sp.fill_rule) && sp.path.subpaths().iter().any(|x| x.closed || x.segments.len() > 1)
                 } else {
-                    sp.path.distance_to(lp) <= sp.stroke.as_ref().map(|s| s.width / 2.0).unwrap_or(0.0) + tol * 2.0 || sp.path.contains(lp, sp.fill_rule)
+                    sp.path.distance_to(lp) <= sp.stroke.as_ref().map(|s| s.width / 2.0).unwrap_or(0.0) + tol * 2.0
+                        || sp.path.contains(lp, sp.fill_rule)
                 }
             });
             let Some((pi, sp)) = target else { return };

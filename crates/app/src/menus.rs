@@ -39,16 +39,64 @@ fn enabled(core: &AppCore, c: C) -> bool {
     let has_doc = core.doc().is_some();
     let has_sel = core.doc().is_some_and(|d| !d.selection.is_empty());
     match c {
-        C::NewDocument | C::NewFromTemplate | C::Open | C::Exit | C::Preferences | C::KeyboardShortcuts | C::About | C::ShowHelp | C::CommandPalette => true,
-        C::ToggleTheme | C::ResetWorkspace | C::SaveWorkspace | C::HidePanels | C::ManagePlugins | C::RunScriptCommand => true,
+        C::NewDocument
+        | C::NewFromTemplate
+        | C::Open
+        | C::Exit
+        | C::Preferences
+        | C::KeyboardShortcuts
+        | C::About
+        | C::ShowHelp
+        | C::Palette => true,
+        C::ToggleTheme | C::ResetWorkspace | C::SaveWorkspace | C::HidePanels | C::ManagePlugins | C::RunScript => true,
         C::Undo => core.doc().is_some_and(|d| d.history.can_undo()),
         C::Redo => core.doc().is_some_and(|d| d.history.can_redo()),
-        C::Cut | C::Copy | C::Clear | C::Duplicate | C::ConvertToSymbol | C::BreakApart | C::Group | C::Ungroup | C::FreeTransform
-        | C::Rotate90CW | C::Rotate90CCW | C::FlipHorizontal | C::FlipVertical | C::RemoveTransform | C::BringToFront | C::BringForward
-        | C::SendBackward | C::SendToBack | C::LockSelection | C::DistributeToLayers | C::Smooth | C::Straighten | C::Optimize
-        | C::LinesToFills | C::Union | C::Intersect | C::Punch | C::Crop | C::SwapSymbol | C::EditSelected | C::EditInPlace
-        | C::AlignLeft | C::AlignHCenter | C::AlignRight | C::AlignTop | C::AlignVCenter | C::AlignBottom | C::DistributeH | C::DistributeV
-        | C::MatchWidth | C::MatchHeight | C::TextBold | C::TextItalic | C::TextAlignLeft | C::TextAlignCenter | C::TextAlignRight
+        C::Cut
+        | C::Copy
+        | C::Clear
+        | C::Duplicate
+        | C::ConvertToSymbol
+        | C::BreakApart
+        | C::Group
+        | C::Ungroup
+        | C::FreeTransform
+        | C::Rotate90CW
+        | C::Rotate90CCW
+        | C::FlipHorizontal
+        | C::FlipVertical
+        | C::RemoveTransform
+        | C::BringToFront
+        | C::BringForward
+        | C::SendBackward
+        | C::SendToBack
+        | C::LockSelection
+        | C::DistributeToLayers
+        | C::Smooth
+        | C::Straighten
+        | C::Optimize
+        | C::LinesToFills
+        | C::Union
+        | C::Intersect
+        | C::Punch
+        | C::Crop
+        | C::SwapSymbol
+        | C::EditSelected
+        | C::EditInPlace
+        | C::AlignLeft
+        | C::AlignHCenter
+        | C::AlignRight
+        | C::AlignTop
+        | C::AlignVCenter
+        | C::AlignBottom
+        | C::DistributeH
+        | C::DistributeV
+        | C::MatchWidth
+        | C::MatchHeight
+        | C::TextBold
+        | C::TextItalic
+        | C::TextAlignLeft
+        | C::TextAlignCenter
+        | C::TextAlignRight
         | C::TextToOutlines => has_sel,
         C::ExitSymbol => core.doc().is_some_and(|d| !d.stack.is_empty()),
         C::Paste | C::PasteInPlace => has_doc && !core.clipboard.elements.is_empty(),
@@ -120,7 +168,18 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
                 }
             });
             ui.menu_button("Export", |ui| {
-                for c in [C::ExportImage, C::ExportAnimatedGif, C::ExportVideo, C::ExportMovie, C::ExportSvg, C::ExportSpriteSheet, C::ExportLottie, C::ExportHtml5, C::ExportSwf, C::ExportXfl] {
+                for c in [
+                    C::ExportImage,
+                    C::ExportAnimatedGif,
+                    C::ExportVideo,
+                    C::ExportMovie,
+                    C::ExportSvg,
+                    C::ExportSpriteSheet,
+                    C::ExportLottie,
+                    C::ExportHtml5,
+                    C::ExportSwf,
+                    C::ExportXfl,
+                ] {
                     item(core, ui, c);
                 }
             });
@@ -149,7 +208,15 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
             }
             ui.separator();
             ui.menu_button("Timeline", |ui| {
-                for c in [C::InsertFrame, C::RemoveFrames, C::InsertKeyframe, C::InsertBlankKeyframe, C::ClearKeyframe, C::ConvertToKeyframes, C::ReverseFrames] {
+                for c in [
+                    C::InsertFrame,
+                    C::RemoveFrames,
+                    C::InsertKeyframe,
+                    C::InsertBlankKeyframe,
+                    C::ClearKeyframe,
+                    C::ConvertToKeyframes,
+                    C::ReverseFrames,
+                ] {
                     item(core, ui, c);
                 }
             });
@@ -158,7 +225,7 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
                 item(core, ui, c);
             }
             ui.separator();
-            for c in [C::CommandPalette, C::Preferences, C::KeyboardShortcuts] {
+            for c in [C::Palette, C::Preferences, C::KeyboardShortcuts] {
                 item(core, ui, c);
             }
         });
@@ -173,14 +240,23 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
                 }
             });
             ui.separator();
-            for c in [C::ToggleRulers, C::ToggleGrid, C::ToggleSnapGrid, C::ToggleGuides, C::ToggleSnapGuides, C::ClearGuides, C::ToggleSnapObjects] {
+            for c in [
+                C::ToggleRulers,
+                C::ToggleGrid,
+                C::ToggleSnapGrid,
+                C::ToggleGuides,
+                C::ToggleSnapGuides,
+                C::ClearGuides,
+                C::ToggleSnapObjects,
+            ] {
                 item(core, ui, c);
             }
         });
         ui.menu_button("Insert", |ui| {
             item(core, ui, C::NewSymbol);
             ui.menu_button("Timeline", |ui| {
-                for c in [C::InsertLayer, C::InsertFolder, C::InsertCameraLayer, C::InsertFrame, C::InsertKeyframe, C::InsertBlankKeyframe] {
+                for c in [C::InsertLayer, C::InsertFolder, C::InsertCameraLayer, C::InsertFrame, C::InsertKeyframe, C::InsertBlankKeyframe]
+                {
                     item(core, ui, c);
                 }
             });
@@ -223,7 +299,19 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
                 }
             });
             ui.menu_button("Align", |ui| {
-                for c in [C::AlignLeft, C::AlignHCenter, C::AlignRight, C::AlignTop, C::AlignVCenter, C::AlignBottom, C::DistributeH, C::DistributeV, C::MatchWidth, C::MatchHeight, C::ToggleAlignToStage] {
+                for c in [
+                    C::AlignLeft,
+                    C::AlignHCenter,
+                    C::AlignRight,
+                    C::AlignTop,
+                    C::AlignVCenter,
+                    C::AlignBottom,
+                    C::DistributeH,
+                    C::DistributeV,
+                    C::MatchWidth,
+                    C::MatchHeight,
+                    C::ToggleAlignToStage,
+                ] {
                     item(core, ui, c);
                 }
             });
@@ -238,7 +326,7 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
         });
         ui.menu_button("Commands", |ui| {
             item(core, ui, C::ManagePlugins);
-            item(core, ui, C::RunScriptCommand);
+            item(core, ui, C::RunScript);
             ui.separator();
             let plugins = core.plugins.clone();
             for p in plugins {
@@ -265,7 +353,23 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
             }
         });
         ui.menu_button("Window", |ui| {
-            for c in [C::ShowTimeline, C::ShowProperties, C::ShowLibrary, C::ShowAssets, C::ShowColor, C::ShowSwatches, C::ShowAlign, C::ShowTransform, C::ShowHistory, C::ShowActions, C::ShowOutput, C::ShowMotionEditor, C::ShowScenes, C::ShowInfo, C::ShowComponents] {
+            for c in [
+                C::ShowTimeline,
+                C::ShowProperties,
+                C::ShowLibrary,
+                C::ShowAssets,
+                C::ShowColor,
+                C::ShowSwatches,
+                C::ShowAlign,
+                C::ShowTransform,
+                C::ShowHistory,
+                C::ShowActions,
+                C::ShowOutput,
+                C::ShowMotionEditor,
+                C::ShowScenes,
+                C::ShowInfo,
+                C::ShowComponents,
+            ] {
                 item(core, ui, c);
             }
             ui.separator();
@@ -273,7 +377,7 @@ pub fn menu_bar(core: &mut AppCore, ui: &mut egui::Ui) {
                 let names: Vec<String> = core.settings.workspaces.keys().cloned().collect();
                 for n in names {
                     if ui.selectable_label(core.settings.current_workspace == n, &n).clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("load_workspace"), n.clone()));
+                        ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("load_workspace"), n.clone()));
                         ui.close();
                     }
                 }
@@ -394,8 +498,17 @@ pub fn execute(core: &mut AppCore, c: C, ctx: &egui::Context) -> Option<UiAction
                 io_ops::open_external_library(core, &p);
             }
         }
-        C::ExportImage | C::ExportAnimatedGif | C::ExportVideo | C::ExportMovie | C::ExportSvg | C::ExportSpriteSheet | C::ExportLottie | C::ExportHtml5
-        | C::ExportSwf | C::ExportXfl | C::PublishSettings => {
+        C::ExportImage
+        | C::ExportAnimatedGif
+        | C::ExportVideo
+        | C::ExportMovie
+        | C::ExportSvg
+        | C::ExportSpriteSheet
+        | C::ExportLottie
+        | C::ExportHtml5
+        | C::ExportSwf
+        | C::ExportXfl
+        | C::PublishSettings => {
             let kind = match c {
                 C::ExportImage => ExportKind::Png,
                 C::ExportAnimatedGif => ExportKind::Gif,
@@ -442,7 +555,8 @@ pub fn execute(core: &mut AppCore, c: C, ctx: &egui::Context) -> Option<UiAction
         C::EditSymbols => {
             let sel = core.library_selected;
             let st = doc!();
-            if let Some(id) = sel.filter(|id| st.doc.library.symbol(*id).is_some()).or_else(|| st.doc.library.symbols.first().map(|s| s.id)) {
+            if let Some(id) = sel.filter(|id| st.doc.library.symbol(*id).is_some()).or_else(|| st.doc.library.symbols.first().map(|s| s.id))
+            {
                 st.stack.clear();
                 ops::enter_symbol(st, id, None);
             }
@@ -461,7 +575,7 @@ pub fn execute(core: &mut AppCore, c: C, ctx: &egui::Context) -> Option<UiAction
         }
         C::Preferences => core.dialog = Some(Dialog::Preferences),
         C::KeyboardShortcuts => core.dialog = Some(Dialog::Shortcuts { filter: String::new(), capturing: None }),
-        C::CommandPalette => core.palette = Some(String::new()),
+        C::Palette => core.palette = Some(String::new()),
         C::ZoomIn | C::ZoomOut => {
             let st = doc!();
             let f = if c == C::ZoomIn { 1.5 } else { 1.0 / 1.5 };
@@ -507,7 +621,13 @@ pub fn execute(core: &mut AppCore, c: C, ctx: &egui::Context) -> Option<UiAction
         C::InsertScene => ops::add_scene(doc!()),
         C::DocumentSettings => {
             let st = doc!();
-            core.dialog = Some(Dialog::DocumentSettings { width: st.doc.width, height: st.doc.height, fps: st.doc.fps, background: st.doc.background, scale_content: false });
+            core.dialog = Some(Dialog::DocumentSettings {
+                width: st.doc.width,
+                height: st.doc.height,
+                fps: st.doc.fps,
+                background: st.doc.background,
+                scale_content: false,
+            });
         }
         C::ConvertToSymbol => {
             let n = core.doc().map(|d| d.doc.library.unique_name("Symbol 1")).unwrap_or_default();
@@ -596,18 +716,28 @@ pub fn execute(core: &mut AppCore, c: C, ctx: &egui::Context) -> Option<UiAction
         }
         C::TextToOutlines => {
             let st = doc!();
-            let texts: Vec<_> = st.selected().into_iter().filter(|(_, e)| matches!(e.kind, animara_document::ElementKind::Text(_))).map(|(_, e)| e.id).collect();
+            let texts: Vec<_> = st
+                .selected()
+                .into_iter()
+                .filter(|(_, e)| matches!(e.kind, animara_document::ElementKind::Text(_)))
+                .map(|(_, e)| e.id)
+                .collect();
             for id in texts {
                 st.selection = vec![id];
                 ops::break_apart(st, auto_key);
                 ops::break_apart(st, auto_key);
             }
         }
-        C::RunScriptCommand => {
+        C::RunScript => {
             if let Some(p) = rfd::FileDialog::new().add_filter("Animara command (Rhai)", &["rhai"]).pick_file() {
                 match std::fs::read_to_string(&p) {
                     Ok(source) => {
-                        let plugin = animara_scripting::Plugin { name: p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(), description: String::new(), path: p, source };
+                        let plugin = animara_scripting::Plugin {
+                            name: p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(),
+                            description: String::new(),
+                            path: p,
+                            source,
+                        };
                         run_plugin(core, &plugin);
                     }
                     Err(e) => core.error(format!("Could not read command: {e}")),

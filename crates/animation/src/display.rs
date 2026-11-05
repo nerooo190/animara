@@ -1,7 +1,7 @@
 use crate::tween::{camera_at, layer_elements_at};
 use animara_document::{
-    BitmapInstance, BlendMode, Color, ColorTransform, Document, Element, ElementKind, Filter, Id, LayerKind, LoopMode,
-    Shape, SymbolKind, TextElement, Timeline,
+    BitmapInstance, BlendMode, Color, ColorTransform, Document, Element, ElementKind, Filter, Id, LayerKind, LoopMode, Shape, SymbolKind,
+    TextElement, Timeline,
 };
 use animara_geometry::{Affine, Vec2};
 use std::collections::HashMap;
@@ -18,12 +18,31 @@ pub enum DisplayItem {
         /// Element id in the timeline being evaluated (top-level only).
         source: Option<Id>,
     },
-    Text { text: TextElement, transform: Affine, color: ColorTransform, source: Option<Id> },
-    Bitmap { bitmap: BitmapInstance, transform: Affine, color: ColorTransform, source: Option<Id> },
+    Text {
+        text: TextElement,
+        transform: Affine,
+        color: ColorTransform,
+        source: Option<Id>,
+    },
+    Bitmap {
+        bitmap: BitmapInstance,
+        transform: Affine,
+        color: ColorTransform,
+        source: Option<Id>,
+    },
     /// Composited group (symbol instance with filters, blend mode or bitmap caching).
-    Group { items: Vec<DisplayItem>, filters: Vec<Filter>, blend: BlendMode, scale: f64, source: Option<Id> },
+    Group {
+        items: Vec<DisplayItem>,
+        filters: Vec<Filter>,
+        blend: BlendMode,
+        scale: f64,
+        source: Option<Id>,
+    },
     /// Content clipped by the alpha of the mask items.
-    Masked { mask: Vec<DisplayItem>, content: Vec<DisplayItem> },
+    Masked {
+        mask: Vec<DisplayItem>,
+        content: Vec<DisplayItem>,
+    },
 }
 
 /// A complete frame ready to render.
@@ -330,10 +349,22 @@ fn element_items(
                 children = children.into_iter().map(|i| outline_item(i, oc)).collect();
             }
             if !inst.filters.is_empty() || !matches!(inst.blend, BlendMode::Normal) || inst.cache_as_bitmap {
-                out.push(DisplayItem::Group { items: children, filters: inst.filters.clone(), blend: inst.blend, scale: m.mean_scale(), source });
+                out.push(DisplayItem::Group {
+                    items: children,
+                    filters: inst.filters.clone(),
+                    blend: inst.blend,
+                    scale: m.mean_scale(),
+                    source,
+                });
             } else if source.is_some() {
                 // Keep top-level instance identity for picking by wrapping in a plain group.
-                out.push(DisplayItem::Group { items: children, filters: Vec::new(), blend: BlendMode::Normal, scale: m.mean_scale(), source });
+                out.push(DisplayItem::Group {
+                    items: children,
+                    filters: Vec::new(),
+                    blend: BlendMode::Normal,
+                    scale: m.mean_scale(),
+                    source,
+                });
             } else {
                 out.extend(children);
             }
@@ -343,7 +374,9 @@ fn element_items(
 
 fn outline_item(i: DisplayItem, c: Color) -> DisplayItem {
     match i {
-        DisplayItem::Shape { shape, transform, color, source, .. } => DisplayItem::Shape { shape, transform, color, outline: Some(c), source },
+        DisplayItem::Shape { shape, transform, color, source, .. } => {
+            DisplayItem::Shape { shape, transform, color, outline: Some(c), source }
+        }
         DisplayItem::Group { items, filters, blend, scale, source } => {
             DisplayItem::Group { items: items.into_iter().map(|x| outline_item(x, c)).collect(), filters, blend, scale, source }
         }
@@ -361,7 +394,9 @@ pub fn transform_item(i: DisplayItem, m: &Affine) -> DisplayItem {
             DisplayItem::Shape { shape, transform: *m * transform, color, outline, source }
         }
         DisplayItem::Text { text, transform, color, source } => DisplayItem::Text { text, transform: *m * transform, color, source },
-        DisplayItem::Bitmap { bitmap, transform, color, source } => DisplayItem::Bitmap { bitmap, transform: *m * transform, color, source },
+        DisplayItem::Bitmap { bitmap, transform, color, source } => {
+            DisplayItem::Bitmap { bitmap, transform: *m * transform, color, source }
+        }
         DisplayItem::Group { items, filters, blend, scale, source } => DisplayItem::Group {
             items: items.into_iter().map(|x| transform_item(x, m)).collect(),
             filters,
@@ -383,7 +418,9 @@ pub fn recolor_item(i: DisplayItem, ct: &ColorTransform) -> DisplayItem {
             DisplayItem::Shape { shape, transform, color: ct.concat(&color), outline, source }
         }
         DisplayItem::Text { text, transform, color, source } => DisplayItem::Text { text, transform, color: ct.concat(&color), source },
-        DisplayItem::Bitmap { bitmap, transform, color, source } => DisplayItem::Bitmap { bitmap, transform, color: ct.concat(&color), source },
+        DisplayItem::Bitmap { bitmap, transform, color, source } => {
+            DisplayItem::Bitmap { bitmap, transform, color: ct.concat(&color), source }
+        }
         DisplayItem::Group { items, filters, blend, scale, source } => {
             DisplayItem::Group { items: items.into_iter().map(|x| recolor_item(x, ct)).collect(), filters, blend, scale, source }
         }

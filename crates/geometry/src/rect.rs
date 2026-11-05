@@ -9,10 +9,8 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub const EMPTY: Rect = Rect {
-        min: Vec2 { x: f64::INFINITY, y: f64::INFINITY },
-        max: Vec2 { x: f64::NEG_INFINITY, y: f64::NEG_INFINITY },
-    };
+    pub const EMPTY: Rect =
+        Rect { min: Vec2 { x: f64::INFINITY, y: f64::INFINITY }, max: Vec2 { x: f64::NEG_INFINITY, y: f64::NEG_INFINITY } };
 
     pub fn new(x0: f64, y0: f64, x1: f64, y1: f64) -> Rect {
         Rect { min: Vec2::new(x0.min(x1), y0.min(y1)), max: Vec2::new(x0.max(x1), y0.max(y1)) }

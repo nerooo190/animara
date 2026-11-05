@@ -74,9 +74,18 @@ impl Ctx<'_> {
                     Fill::Radial { focal, .. } if *focal != 0.0 => format!(" focalPointRatio=\"{}\"", num(*focal)),
                     _ => String::new(),
                 };
-                let mut s = format!("<{tag}{sm}{focal}>{}", if matrix_xml(&gm).is_empty() { "<matrix><Matrix/></matrix>".to_string() } else { matrix_xml(&gm) });
+                let mut s = format!(
+                    "<{tag}{sm}{focal}>{}",
+                    if matrix_xml(&gm).is_empty() { "<matrix><Matrix/></matrix>".to_string() } else { matrix_xml(&gm) }
+                );
                 for st in stops {
-                    let _ = write!(s, "<GradientEntry color=\"{}\"{} ratio=\"{}\"/>", hex(st.color), alpha_attr(st.color), num(st.offset as f64));
+                    let _ = write!(
+                        s,
+                        "<GradientEntry color=\"{}\"{} ratio=\"{}\"/>",
+                        hex(st.color),
+                        alpha_attr(st.color),
+                        num(st.offset as f64)
+                    );
                 }
                 let _ = write!(s, "</{tag}>");
                 s
@@ -119,9 +128,17 @@ impl Ctx<'_> {
                 let w = num(st.width * if st.scale_with_object { m.mean_scale() } else { 1.0 });
                 let inner = format!("<fill>{}</fill>", self.fill_xml(&st.fill, m));
                 let body = match st.style {
-                    StrokeStyle::Dashed { dash, gap } => format!("<DashedStroke weight=\"{w}\" dash1=\"{}\" dash2=\"{}\"{caps}{joints}{scale}>{inner}</DashedStroke>", num(dash), num(gap)),
-                    StrokeStyle::Dotted { spacing } => format!("<DottedStroke weight=\"{w}\" dotSpace=\"{}\"{caps}{joints}{scale}>{inner}</DottedStroke>", num(spacing)),
-                    StrokeStyle::Hairline => format!("<SolidStroke weight=\"1\" solidStyle=\"hairline\"{caps}{joints}>{inner}</SolidStroke>"),
+                    StrokeStyle::Dashed { dash, gap } => format!(
+                        "<DashedStroke weight=\"{w}\" dash1=\"{}\" dash2=\"{}\"{caps}{joints}{scale}>{inner}</DashedStroke>",
+                        num(dash),
+                        num(gap)
+                    ),
+                    StrokeStyle::Dotted { spacing } => {
+                        format!("<DottedStroke weight=\"{w}\" dotSpace=\"{}\"{caps}{joints}{scale}>{inner}</DottedStroke>", num(spacing))
+                    }
+                    StrokeStyle::Hairline => {
+                        format!("<SolidStroke weight=\"1\" solidStyle=\"hairline\"{caps}{joints}>{inner}</SolidStroke>")
+                    }
                     StrokeStyle::Solid => format!("<SolidStroke weight=\"{w}\"{caps}{joints}{scale}>{inner}</SolidStroke>"),
                 };
                 let _ = write!(strokes, "<StrokeStyle index=\"{idx}\">{body}</StrokeStyle>");
@@ -131,7 +148,10 @@ impl Ctx<'_> {
                 let area: f64 = sub.segments.iter().map(|s| s.start().cross(s.end())).sum();
                 let mut d = format!("!{} {}", tw(sub.start.x), tw(sub.start.y));
                 let mut segs = sub.segments.clone();
-                if !sub.closed && sp.fill.is_some() && let (Some(f), Some(l)) = (segs.first().map(|s| s.start()), segs.last().map(|s| s.end())) {
+                if !sub.closed
+                    && sp.fill.is_some()
+                    && let (Some(f), Some(l)) = (segs.first().map(|s| s.start()), segs.last().map(|s| s.end()))
+                {
                     segs.push(Segment::Line(l, f));
                 }
                 for s in &segs {
@@ -212,7 +232,12 @@ impl Ctx<'_> {
                 }
                 let mut inner = matrix_xml(&m);
                 if e.pivot != Vec2::ZERO {
-                    let _ = write!(inner, "<transformationPoint><Point x=\"{}\" y=\"{}\"/></transformationPoint>", num(e.pivot.x), num(e.pivot.y));
+                    let _ = write!(
+                        inner,
+                        "<transformationPoint><Point x=\"{}\" y=\"{}\"/></transformationPoint>",
+                        num(e.pivot.x),
+                        num(e.pivot.y)
+                    );
                 }
                 match i.color_effect {
                     ColorEffect::None => {}
@@ -220,7 +245,8 @@ impl Ctx<'_> {
                         let _ = write!(inner, "<color><Color brightness=\"{}\"/></color>", num(amount as f64));
                     }
                     ColorEffect::Tint { color, amount } => {
-                        let _ = write!(inner, "<color><Color tintMultiplier=\"{}\" tintColor=\"{}\"/></color>", num(amount as f64), hex(color));
+                        let _ =
+                            write!(inner, "<color><Color tintMultiplier=\"{}\" tintColor=\"{}\"/></color>", num(amount as f64), hex(color));
                     }
                     ColorEffect::Alpha { alpha } => {
                         let _ = write!(inner, "<color><Color alphaMultiplier=\"{}\"/></color>", num(alpha as f64));
@@ -229,8 +255,14 @@ impl Ctx<'_> {
                         let _ = write!(
                             inner,
                             "<color><Color redMultiplier=\"{}\" greenMultiplier=\"{}\" blueMultiplier=\"{}\" alphaMultiplier=\"{}\" redOffset=\"{}\" greenOffset=\"{}\" blueOffset=\"{}\" alphaOffset=\"{}\"/></color>",
-                            num(t.mul[0] as f64), num(t.mul[1] as f64), num(t.mul[2] as f64), num(t.mul[3] as f64),
-                            num(t.add[0] as f64 * 255.0), num(t.add[1] as f64 * 255.0), num(t.add[2] as f64 * 255.0), num(t.add[3] as f64 * 255.0)
+                            num(t.mul[0] as f64),
+                            num(t.mul[1] as f64),
+                            num(t.mul[2] as f64),
+                            num(t.mul[3] as f64),
+                            num(t.add[0] as f64 * 255.0),
+                            num(t.add[1] as f64 * 255.0),
+                            num(t.add[2] as f64 * 255.0),
+                            num(t.add[3] as f64 * 255.0)
                         );
                     }
                 }
@@ -238,21 +270,47 @@ impl Ctx<'_> {
                     inner.push_str("<filters>");
                     for f in &i.filters {
                         let _ = match *f {
-                            Filter::Blur { blur_x, blur_y, quality } => write!(inner, "<BlurFilter blurX=\"{}\" blurY=\"{}\" quality=\"{quality}\"/>", num(blur_x), num(blur_y)),
-                            Filter::DropShadow { blur_x, blur_y, strength, quality, angle, distance, color, knockout, inner: inn, hide_object } => write!(
+                            Filter::Blur { blur_x, blur_y, quality } => {
+                                write!(inner, "<BlurFilter blurX=\"{}\" blurY=\"{}\" quality=\"{quality}\"/>", num(blur_x), num(blur_y))
+                            }
+                            Filter::DropShadow {
+                                blur_x,
+                                blur_y,
+                                strength,
+                                quality,
+                                angle,
+                                distance,
+                                color,
+                                knockout,
+                                inner: inn,
+                                hide_object,
+                            } => write!(
                                 inner,
                                 "<DropShadowFilter blurX=\"{}\" blurY=\"{}\" strength=\"{}\" quality=\"{quality}\" angle=\"{}\" distance=\"{}\" color=\"{}\"{} knockout=\"{knockout}\" inner=\"{inn}\" hideObject=\"{hide_object}\"/>",
-                                num(blur_x), num(blur_y), num(strength as f64), num(angle), num(distance), hex(color), alpha_attr(color)
+                                num(blur_x),
+                                num(blur_y),
+                                num(strength as f64),
+                                num(angle),
+                                num(distance),
+                                hex(color),
+                                alpha_attr(color)
                             ),
                             Filter::Glow { blur_x, blur_y, strength, quality, color, knockout, inner: inn } => write!(
                                 inner,
                                 "<GlowFilter blurX=\"{}\" blurY=\"{}\" strength=\"{}\" quality=\"{quality}\" color=\"{}\"{} knockout=\"{knockout}\" inner=\"{inn}\"/>",
-                                num(blur_x), num(blur_y), num(strength as f64), hex(color), alpha_attr(color)
+                                num(blur_x),
+                                num(blur_y),
+                                num(strength as f64),
+                                hex(color),
+                                alpha_attr(color)
                             ),
                             Filter::AdjustColor { brightness, contrast, saturation, hue } => write!(
                                 inner,
                                 "<AdjustColorFilter brightness=\"{}\" contrast=\"{}\" saturation=\"{}\" hue=\"{}\"/>",
-                                num(brightness as f64), num(contrast as f64), num(saturation as f64), num(hue as f64)
+                                num(brightness as f64),
+                                num(contrast as f64),
+                                num(saturation as f64),
+                                num(hue as f64)
                             ),
                         };
                     }
@@ -391,11 +449,20 @@ impl Ctx<'_> {
                         SoundSync::Stop => "stop",
                         SoundSync::Stream => "stream",
                     };
-                    let _ = write!(fa, " soundName=\"{}\" soundSync=\"{sync}\" soundLoop=\"{}\"", esc(&library_name(&a.folder, &a.name)), snd.loops + 1);
+                    let _ = write!(
+                        fa,
+                        " soundName=\"{}\" soundSync=\"{sync}\" soundLoop=\"{}\"",
+                        esc(&library_name(&a.folder, &a.name)),
+                        snd.loops + 1
+                    );
                 }
                 let _ = write!(s, "<DOMFrame{fa} keyMode=\"9728\">");
                 if !k.script.is_empty() {
-                    let _ = write!(s, "<Actionscript><script><![CDATA[{}]]></script></Actionscript>", k.script.replace("]]>", "]]]]><![CDATA[>"));
+                    let _ = write!(
+                        s,
+                        "<Actionscript><script><![CDATA[{}]]></script></Actionscript>",
+                        k.script.replace("]]>", "]]]]><![CDATA[>")
+                    );
                 }
                 s.push_str("<elements>");
                 for e in &k.elements {
@@ -440,13 +507,28 @@ pub fn xfl_files(doc: &Document) -> Vec<(String, Vec<u8>)> {
         for b in &doc.library.bitmaps {
             let name = library_name(&b.folder, &b.name);
             let href = path_safe(&name);
-            let _ = write!(dom, "<DOMBitmapItem name=\"{}\" href=\"{}\" allowSmoothing=\"{}\" frameRight=\"{}\" frameBottom=\"{}\"/>", esc(&name), esc(&href), b.smoothing, b.width * 20, b.height * 20);
+            let _ = write!(
+                dom,
+                "<DOMBitmapItem name=\"{}\" href=\"{}\" allowSmoothing=\"{}\" frameRight=\"{}\" frameBottom=\"{}\"/>",
+                esc(&name),
+                esc(&href),
+                b.smoothing,
+                b.width * 20,
+                b.height * 20
+            );
             files.push((format!("LIBRARY/{href}"), b.data.as_ref().clone()));
         }
         for s in &doc.library.sounds {
             let name = library_name(&s.folder, &s.name);
             let href = path_safe(&name);
-            let _ = write!(dom, "<DOMSoundItem name=\"{}\" href=\"{}\" sampleRate=\"{}\" sampleCount=\"{}\"/>", esc(&name), esc(&href), s.sample_rate, (s.duration * s.sample_rate as f64) as u64);
+            let _ = write!(
+                dom,
+                "<DOMSoundItem name=\"{}\" href=\"{}\" sampleRate=\"{}\" sampleCount=\"{}\"/>",
+                esc(&name),
+                esc(&href),
+                s.sample_rate,
+                (s.duration * s.sample_rate as f64) as u64
+            );
             files.push((format!("LIBRARY/{href}"), s.data.as_ref().clone()));
         }
         dom.push_str("</media>");
@@ -462,7 +544,11 @@ pub fn xfl_files(doc: &Document) -> Vec<(String, Vec<u8>)> {
                 SymbolKind::Button => " symbolType=\"button\"",
                 SymbolKind::MovieClip => "",
             };
-            let linkage = if s.linkage.is_empty() { String::new() } else { format!(" linkageExportForAS=\"true\" linkageClassName=\"{}\"", esc(&s.linkage)) };
+            let linkage = if s.linkage.is_empty() {
+                String::new()
+            } else {
+                format!(" linkageExportForAS=\"true\" linkageClassName=\"{}\"", esc(&s.linkage))
+            };
             let xml = format!(
                 "<DOMSymbolItem xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://ns.adobe.com/xfl/2008/\" name=\"{}\"{kind}{linkage}><timeline>{}</timeline></DOMSymbolItem>",
                 esc(&name),
@@ -478,7 +564,10 @@ pub fn xfl_files(doc: &Document) -> Vec<(String, Vec<u8>)> {
     }
     dom.push_str("</timelines></DOMDocument>");
     files.insert(0, ("DOMDocument.xml".into(), dom.into_bytes()));
-    files.push(("META-INF/metadata.xml".into(), format!("<metadata generator=\"Animara {}\" title=\"{}\"/>", env!("CARGO_PKG_VERSION"), esc(&doc.metadata.title)).into_bytes()));
+    files.push((
+        "META-INF/metadata.xml".into(),
+        format!("<metadata generator=\"Animara {}\" title=\"{}\"/>", env!("CARGO_PKG_VERSION"), esc(&doc.metadata.title)).into_bytes(),
+    ));
     files
 }
 

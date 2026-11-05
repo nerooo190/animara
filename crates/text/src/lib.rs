@@ -58,14 +58,23 @@ impl TextLayout {
     }
     /// Byte offset nearest to a point (for click-to-place caret).
     pub fn hit(&self, p: Vec2) -> usize {
-        let line = self
-            .lines
-            .iter()
-            .min_by(|a, b| {
-                let da = if p.y < a.top { a.top - p.y } else if p.y > a.top + a.height { p.y - a.top - a.height } else { 0.0 };
-                let db = if p.y < b.top { b.top - p.y } else if p.y > b.top + b.height { p.y - b.top - b.height } else { 0.0 };
-                da.total_cmp(&db)
-            });
+        let line = self.lines.iter().min_by(|a, b| {
+            let da = if p.y < a.top {
+                a.top - p.y
+            } else if p.y > a.top + a.height {
+                p.y - a.top - a.height
+            } else {
+                0.0
+            };
+            let db = if p.y < b.top {
+                b.top - p.y
+            } else if p.y > b.top + b.height {
+                p.y - b.top - b.height
+            } else {
+                0.0
+            };
+            da.total_cmp(&db)
+        });
         match line {
             Some(l) => l.carets.iter().min_by(|a, b| (a.1 - p.x).abs().total_cmp(&(b.1 - p.x).abs())).map(|c| c.0).unwrap_or(l.range.start),
             None => 0,
@@ -131,7 +140,10 @@ impl FontLibrary {
         // Bundled fallbacks guarantee text renders on systems without fonts.
         db.load_font_data(epaint_default_fonts::UBUNTU_LIGHT.to_vec());
         db.load_font_data(epaint_default_fonts::HACK_REGULAR.to_vec());
-        db.set_sans_serif_family(Self::first_available(&db, &["Noto Sans", "DejaVu Sans", "Liberation Sans", "Arial", "Segoe UI", "Ubuntu"]));
+        db.set_sans_serif_family(Self::first_available(
+            &db,
+            &["Noto Sans", "DejaVu Sans", "Liberation Sans", "Arial", "Segoe UI", "Ubuntu"],
+        ));
         db.set_serif_family(Self::first_available(&db, &["Noto Serif", "DejaVu Serif", "Liberation Serif", "Times New Roman", "Ubuntu"]));
         db.set_monospace_family(Self::first_available(&db, &["Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Hack"]));
         let mut fallback_ids = Vec::new();
@@ -248,9 +260,8 @@ impl FontLibrary {
             pos += r.text.len();
         }
         let default_style = text.style();
-        let style_at = |b: usize| -> &TextStyle {
-            style_ranges.iter().find(|(r, _)| r.contains(&b)).map(|(_, s)| *s).unwrap_or(&default_style)
-        };
+        let style_at =
+            |b: usize| -> &TextStyle { style_ranges.iter().find(|(r, _)| r.contains(&b)).map(|(_, s)| *s).unwrap_or(&default_style) };
 
         let mut layout = TextLayout { box_width: text.width.unwrap_or(0.0), ..Default::default() };
         let mut y = 0.0;
@@ -323,15 +334,8 @@ impl FontLibrary {
         };
         if para.is_empty() {
             let (asc, h) = line_metrics(&first_style);
-            let info = LineInfo {
-                top: *y,
-                baseline: *y + asc,
-                height: h,
-                x: 0.0,
-                width: 0.0,
-                range: base..base,
-                carets: vec![(base, 0.0)],
-            };
+            let info =
+                LineInfo { top: *y, baseline: *y + asc, height: h, x: 0.0, width: 0.0, range: base..base, carets: vec![(base, 0.0)] };
             *y += h + text.line_spacing;
             let _ = primary;
             return vec![(info, Vec::new())];
@@ -381,11 +385,8 @@ impl FontLibrary {
                 buf.push_str(&para[s.range.clone()]);
                 buf.set_direction(if s.level.is_rtl() { rustybuzz::Direction::RightToLeft } else { rustybuzz::Direction::LeftToRight });
                 buf.guess_segment_properties();
-                let features = if s.style.kerning {
-                    vec![]
-                } else {
-                    vec![rustybuzz::Feature::new(ttf_parser::Tag::from_bytes(b"kern"), 0, ..)]
-                };
+                let features =
+                    if s.style.kerning { vec![] } else { vec![rustybuzz::Feature::new(ttf_parser::Tag::from_bytes(b"kern"), 0, ..)] };
                 let out = rustybuzz::shape(&face, &features, buf);
                 for (info, p) in out.glyph_infos().iter().zip(out.glyph_positions()) {
                     let cluster = s.range.start + info.cluster as usize;

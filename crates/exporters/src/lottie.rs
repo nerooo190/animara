@@ -51,14 +51,12 @@ fn path_value(p: &Path) -> Vec<Value> {
             for (k, c) in cubics.iter().enumerate() {
                 v.push(json!([r(c[0].x), r(c[0].y)]));
                 o.push(json!([r(c[1].x - c[0].x), r(c[1].y - c[0].y)]));
-                let prev_in = if k == 0 {
-                    if sp.closed { cubics[n - 1][2] - c[0] } else { Vec2::ZERO }
-                } else {
-                    cubics[k - 1][2] - c[0]
-                };
+                let prev_in = if k == 0 { if sp.closed { cubics[n - 1][2] - c[0] } else { Vec2::ZERO } } else { cubics[k - 1][2] - c[0] };
                 i.push(json!([r(prev_in.x), r(prev_in.y)]));
             }
-            if !sp.closed && let Some(last) = cubics.last() {
+            if !sp.closed
+                && let Some(last) = cubics.last()
+            {
                 v.push(json!([r(last[3].x), r(last[3].y)]));
                 o.push(json!([0, 0]));
                 i.push(json!([r(last[2].x - last[3].x), r(last[2].y - last[3].y)]));
@@ -189,7 +187,8 @@ impl Ctx<'_> {
         let mime = if b.format == "jpg" { "jpeg" } else { b.format.as_str() };
         let data = base64::engine::general_purpose::STANDARD.encode(b.data.as_slice());
         let name = format!("img_{}", self.assets.len());
-        self.assets.push((id, json!({"id": name, "w": b.width, "h": b.height, "u": "", "p": format!("data:image/{mime};base64,{data}"), "e": 1})));
+        self.assets
+            .push((id, json!({"id": name, "w": b.width, "h": b.height, "u": "", "p": format!("data:image/{mime};base64,{data}"), "e": 1})));
         Some(name)
     }
 
@@ -209,10 +208,12 @@ impl Ctx<'_> {
                     g.bm = blend_code(*blend);
                     for f in filters {
                         match f {
-                            Filter::Blur { blur_x, blur_y, .. } => g.effects.push(json!({"ty": 29, "nm": "Gaussian Blur", "np": 5, "ix": 1, "en": 1, "ef": [
+                            Filter::Blur { blur_x, blur_y, .. } => {
+                                g.effects.push(json!({"ty": 29, "nm": "Gaussian Blur", "np": 5, "ix": 1, "en": 1, "ef": [
                                 {"ty": 0, "nm": "Blurriness", "ix": 1, "v": st(json!(r((blur_x + blur_y) / 2.0 * scale)))},
                                 {"ty": 7, "nm": "Blur Dimensions", "ix": 2, "v": st(json!(1))},
-                                {"ty": 7, "nm": "Repeat Edge Pixels", "ix": 3, "v": st(json!(0))}]})),
+                                {"ty": 7, "nm": "Repeat Edge Pixels", "ix": 3, "v": st(json!(0))}]}))
+                            }
                             other => self.warnings.push(format!("{} filter is not exported to Lottie", other.name())),
                         }
                     }
@@ -293,7 +294,9 @@ pub fn lottie_json(doc: &Document, opts: &ExportOptions) -> (Value, Vec<String>)
                         "ks": {"o": st(json!(r(opacity * 100.0))), "r": st(json!(r(p.skew_x.to_degrees()))), "p": st(json!([r(p.x), r(p.y), 0])),
                                "a": st(json!([0, 0, 0])), "s": st(json!([r(p.scale_x * 100.0), r(p.scale_y * 100.0), 100]))}})
                 }
-                None => json!({"ddd": 0, "ind": ind, "ty": 4, "nm": format!("Frames {}-{}", s + 1, e), "sr": 1, "ks": identity_ks(1.0), "shapes": spec.shapes}),
+                None => {
+                    json!({"ddd": 0, "ind": ind, "ty": 4, "nm": format!("Frames {}-{}", s + 1, e), "sr": 1, "ks": identity_ks(1.0), "shapes": spec.shapes})
+                }
             };
             let obj = l.as_object_mut().unwrap();
             obj.insert("ao".into(), json!(0));

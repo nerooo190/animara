@@ -197,10 +197,16 @@ pub enum Ease {
     #[default]
     Linear,
     /// Classic-tween ease strength: -100 (ease in) .. 100 (ease out).
-    Classic { strength: i32 },
-    Preset { preset: EasePreset },
+    Classic {
+        strength: i32,
+    },
+    Preset {
+        preset: EasePreset,
+    },
     /// Custom curve from (0,0) to (1,1) through the given points (sorted by x).
-    Custom { points: Vec<CurvePoint> },
+    Custom {
+        points: Vec<CurvePoint>,
+    },
 }
 
 impl Ease {

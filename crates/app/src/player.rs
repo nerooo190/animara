@@ -66,7 +66,10 @@ impl Player {
     /// Top-level instances on the current root frame: (element, layer index).
     fn instances(&self) -> Vec<Element> {
         let tl = self.timeline();
-        (0..tl.layers.len()).flat_map(|li| layer_elements_at(&self.doc, tl, li, self.frame).0).filter(|e| matches!(e.kind, ElementKind::Instance(_))).collect()
+        (0..tl.layers.len())
+            .flat_map(|li| layer_elements_at(&self.doc, tl, li, self.frame).0)
+            .filter(|e| matches!(e.kind, ElementKind::Instance(_)))
+            .collect()
     }
 
     fn find_named(&self, name: &str) -> Option<Element> {
@@ -205,7 +208,11 @@ impl Player {
                         }
                     }
                     Some(Some(id)) => {
-                        let sym = self.instances().into_iter().find(|e| e.id == id).and_then(|e| e.as_instance().and_then(|i| self.doc.library.symbol(i.symbol).cloned()));
+                        let sym = self
+                            .instances()
+                            .into_iter()
+                            .find(|e| e.id == id)
+                            .and_then(|e| e.as_instance().and_then(|i| self.doc.library.symbol(i.symbol).cloned()));
                         if let Some(s) = sym
                             && let Some(f) = self.resolve_frame(&s.timeline, &frame)
                         {
@@ -376,7 +383,13 @@ impl Player {
             if let Some(i) = e.as_instance()
                 && self.doc.library.symbol(i.symbol).is_some_and(|s| s.kind == SymbolKind::Button)
             {
-                let f = if self.pressed == Some(e.id) { 2 } else if self.hover == Some(e.id) { 1 } else { 0 };
+                let f = if self.pressed == Some(e.id) {
+                    2
+                } else if self.hover == Some(e.id) {
+                    1
+                } else {
+                    0
+                };
                 o.instance_frames.insert(e.id, f);
             }
         }
@@ -406,7 +419,15 @@ impl Player {
         let ppp = ui.ctx().pixels_per_point() as f64;
         let size = egui::vec2((self.doc.width * s) as f32, (self.doc.height * s) as f32);
         let (rect, resp) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
-        let key = (self.frame, self.scene, self.revision ^ ((s * ppp * 1000.0) as u64) ^ self.hover.map(|h| h.0).unwrap_or(0) ^ self.pressed.map(|p| p.0 << 1).unwrap_or(0) ^ self.clip_frames.values().map(|v| *v as u64).sum::<u64>());
+        let key = (
+            self.frame,
+            self.scene,
+            self.revision
+                ^ ((s * ppp * 1000.0) as u64)
+                ^ self.hover.map(|h| h.0).unwrap_or(0)
+                ^ self.pressed.map(|p| p.0 << 1).unwrap_or(0)
+                ^ self.clip_frames.values().map(|v| *v as u64).sum::<u64>(),
+        );
         if key != self.tex_key || self.texture.is_none() {
             self.tex_key = key;
             let dl = evaluate_document_frame(&self.doc, self.scene, self.frame, &self.eval_opts());
@@ -430,15 +451,18 @@ impl Player {
         });
         let new_hover = hit.as_ref().map(|e| e.id);
         if new_hover != self.hover {
-            if let Some(old) = self.hover.and_then(|h| self.instances().into_iter().find(|e| e.id == h)).and_then(|e| e.as_instance().map(|i| i.instance_name.clone())) {
-                if let Ok(c) = self.host.fire("mouse_out", &old) {
-                    self.apply(c, None);
-                }
+            if let Some(old) = self
+                .hover
+                .and_then(|h| self.instances().into_iter().find(|e| e.id == h))
+                .and_then(|e| e.as_instance().map(|i| i.instance_name.clone()))
+                && let Ok(c) = self.host.fire("mouse_out", &old)
+            {
+                self.apply(c, None);
             }
-            if let Some(n) = hit.as_ref().and_then(|e| e.as_instance().map(|i| i.instance_name.clone())) {
-                if let Ok(c) = self.host.fire("mouse_over", &n) {
-                    self.apply(c, None);
-                }
+            if let Some(n) = hit.as_ref().and_then(|e| e.as_instance().map(|i| i.instance_name.clone()))
+                && let Ok(c) = self.host.fire("mouse_over", &n)
+            {
+                self.apply(c, None);
             }
             self.hover = new_hover;
         }
@@ -462,7 +486,9 @@ impl Player {
             self.pressed = None;
         }
         // Keyboard events.
-        let keys: Vec<egui::Key> = ui.input(|i| i.events.iter().filter_map(|e| if let egui::Event::Key { key, pressed: true, .. } = e { Some(*key) } else { None }).collect());
+        let keys: Vec<egui::Key> = ui.input(|i| {
+            i.events.iter().filter_map(|e| if let egui::Event::Key { key, pressed: true, .. } = e { Some(*key) } else { None }).collect()
+        });
         for k in keys {
             if let Ok(c) = self.host.fire("key", k.name()) {
                 self.apply(c, None);

@@ -57,9 +57,11 @@ impl Tab {
 pub fn default_layout() -> DockState<Tab> {
     let mut dock = DockState::new(vec![Tab::Stage]);
     let surface = dock.main_surface_mut();
-    let [stage, _right] = surface.split_right(NodeIndex::root(), 0.74, vec![Tab::Properties, Tab::Library, Tab::Assets, Tab::Color, Tab::Align]);
+    let [stage, _right] =
+        surface.split_right(NodeIndex::root(), 0.74, vec![Tab::Properties, Tab::Library, Tab::Assets, Tab::Color, Tab::Align]);
     let [_stage, _bottom] = surface.split_below(stage, 0.66, vec![Tab::Timeline, Tab::Output, Tab::MotionEditor, Tab::Actions]);
-    let [_r, _lower] = surface.split_below(_right, 0.72, vec![Tab::Swatches, Tab::Transform, Tab::History, Tab::Info, Tab::Scenes, Tab::Components]);
+    let [_r, _lower] =
+        surface.split_below(_right, 0.72, vec![Tab::Swatches, Tab::Transform, Tab::History, Tab::Info, Tab::Scenes, Tab::Components]);
     dock
 }
 
@@ -72,7 +74,7 @@ struct Viewer<'a> {
 impl TabViewer for Viewer<'_> {
     type Tab = Tab;
     fn id(&mut self, tab: &mut Tab) -> egui::Id {
-        egui::Id::new(*tab)
+        egui::Id::unique(*tab)
     }
     fn title(&mut self, tab: &mut Tab) -> egui::WidgetText {
         tab.title().into()
@@ -278,11 +280,13 @@ impl eframe::App for AnimaraApp {
                     if ui.button("⇪ Publish").clicked() {
                         self.core.run(C::Publish);
                     }
-                    let names: Vec<String> = std::iter::once("Essentials".to_string()).chain(self.core.settings.workspaces.keys().filter(|k| *k != "Essentials").cloned()).collect();
+                    let names: Vec<String> = std::iter::once("Essentials".to_string())
+                        .chain(self.core.settings.workspaces.keys().filter(|k| *k != "Essentials").cloned())
+                        .collect();
                     egui::ComboBox::from_id_salt("workspace").selected_text(&self.core.settings.current_workspace).show_ui(ui, |ui| {
                         for n in names {
                             if ui.selectable_label(self.core.settings.current_workspace == n, &n).clicked() {
-                                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("load_workspace"), n.clone()));
+                                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("load_workspace"), n.clone()));
                             }
                         }
                     });
@@ -295,7 +299,18 @@ impl eframe::App for AnimaraApp {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let Some(st) = self.core.doc() {
                         let p = self.core.tstate.last_pointer_doc;
-                        ui.label(egui::RichText::new(format!("{:.0}%  ·  x {:.0}  y {:.0}  ·  frame {}/{}  ·  {}", st.view.zoom * 100.0, p.x, p.y, st.frame + 1, st.timeline().length(), self.core.tool.short())).small());
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{:.0}%  ·  x {:.0}  y {:.0}  ·  frame {}/{}  ·  {}",
+                                st.view.zoom * 100.0,
+                                p.x,
+                                p.y,
+                                st.frame + 1,
+                                st.timeline().length(),
+                                self.core.tool.short()
+                            ))
+                            .small(),
+                        );
                     }
                 });
             });
@@ -320,7 +335,11 @@ impl eframe::App for AnimaraApp {
             p.tick(now);
             let mut open = p.open;
             let title = format!("Test Movie — {}", p.doc.name);
-            egui::Window::new(title).open(&mut open).default_size([p.doc.width.min(960.0) as f32, p.doc.height.min(600.0) as f32 + 30.0]).resizable(true).show(&ctx, |ui| p.ui(ui));
+            egui::Window::new(title)
+                .open(&mut open)
+                .default_size([p.doc.width.min(960.0) as f32, p.doc.height.min(600.0) as f32 + 30.0])
+                .resizable(true)
+                .show(&ctx, |ui| p.ui(ui));
             for l in p.log.drain(..) {
                 self.core.log.push((crate::core::LogLevel::Info, l));
             }
@@ -334,7 +353,7 @@ impl eframe::App for AnimaraApp {
         }
 
         // Workspace load/save requests.
-        if let Some(name) = ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::new("load_workspace"))) {
+        if let Some(name) = ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::unique("load_workspace"))) {
             if name == "Essentials" {
                 self.dock = default_layout();
             } else if let Some(d) = self.core.settings.workspaces.get(&name).and_then(|s| serde_json::from_str(s).ok()) {
@@ -342,12 +361,12 @@ impl eframe::App for AnimaraApp {
             }
             self.core.settings.current_workspace = name;
         }
-        if let Some(name) = ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::new("save_workspace"))) {
-            if let Ok(s) = serde_json::to_string(&self.dock) {
-                self.core.settings.workspaces.insert(name.clone(), s);
-                self.core.settings.current_workspace = name.clone();
-                self.core.info(format!("Saved workspace “{name}”"));
-            }
+        if let Some(name) = ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::unique("save_workspace")))
+            && let Ok(s) = serde_json::to_string(&self.dock)
+        {
+            self.core.settings.workspaces.insert(name.clone(), s);
+            self.core.settings.current_workspace = name.clone();
+            self.core.info(format!("Saved workspace “{name}”"));
         }
 
         // Execute queued commands.

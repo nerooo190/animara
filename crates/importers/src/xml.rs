@@ -83,11 +83,7 @@ pub fn unescape(s: &str) -> String {
 
 fn start_node(e: &quick_xml::events::BytesStart) -> XmlNode {
     let name = e.local_name().as_ref().to_string();
-    let attrs = e
-        .attributes()
-        .flatten()
-        .map(|a| (a.key.local_name().as_ref().to_string(), unescape(a.value.as_ref())))
-        .collect();
+    let attrs = e.attributes().flatten().map(|a| (a.key.local_name().as_ref().to_string(), unescape(a.value.as_ref()))).collect();
     XmlNode { name, attrs, children: Vec::new(), text: String::new() }
 }
 

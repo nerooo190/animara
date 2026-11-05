@@ -7,9 +7,7 @@ pub mod bounds;
 mod filters;
 
 use animara_animation::{DisplayItem, DisplayList, EvalOptions, evaluate_document_frame};
-use animara_document::{
-    BlendMode, Color, ColorTransform, Document, Fill, Id, LineCap, LineJoin, Shape, SpreadMode, Stroke, StrokeStyle,
-};
+use animara_document::{BlendMode, Color, ColorTransform, Document, Fill, Id, LineCap, LineJoin, Shape, SpreadMode, Stroke, StrokeStyle};
 use animara_geometry::{Affine, FillRule, Path, PathCmd};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -194,6 +192,7 @@ fn ts_stroke(s: &Stroke, m: &Affine) -> tiny_skia::Stroke {
 }
 
 /// Draw a shape with a world transform onto a pixmap.
+#[allow(clippy::too_many_arguments)]
 pub fn draw_shape(
     pm: &mut Pixmap,
     shape: &Shape,
@@ -313,7 +312,8 @@ impl Renderer<'_> {
                 }
             }
             DisplayItem::Masked { mask, content } => {
-                let (Some(mut content_pm), Some(mut mask_pm)) = (Pixmap::new(pm.width(), pm.height()), Pixmap::new(pm.width(), pm.height()))
+                let (Some(mut content_pm), Some(mut mask_pm)) =
+                    (Pixmap::new(pm.width(), pm.height()), Pixmap::new(pm.width(), pm.height()))
                 else {
                     return;
                 };
@@ -438,16 +438,17 @@ mod tests {
     fn instance_tint_and_blur() {
         let mut doc = Document::new(100.0, 100.0, 24.0);
         let mut sym = Symbol::new("sq", SymbolKind::MovieClip);
-        sym.timeline.layers[0].frames[0].elements.push(Element::shape(vec![ShapePath::filled(
-            Path::rect(Rect::new(0.0, 0.0, 40.0, 40.0)),
-            Fill::solid(Color::WHITE),
-        )]));
+        sym.timeline.layers[0].frames[0]
+            .elements
+            .push(Element::shape(vec![ShapePath::filled(Path::rect(Rect::new(0.0, 0.0, 40.0, 40.0)), Fill::solid(Color::WHITE))]));
         let sid = doc.library.add_symbol(sym);
         let mut inst = SymbolInstance::new(sid);
         inst.color_effect = animara_document::ColorEffect::Tint { color: Color::rgb(0.0, 0.0, 1.0), amount: 1.0 };
         inst.filters.push(Filter::Blur { blur_x: 10.0, blur_y: 10.0, quality: 2 });
         doc.background = Color::BLACK;
-        doc.scenes[0].timeline.layers[0].frames[0].elements.push(Element::new(ElementKind::Instance(inst)).with_transform(Affine::translate(30.0, 30.0)));
+        doc.scenes[0].timeline.layers[0].frames[0]
+            .elements
+            .push(Element::new(ElementKind::Instance(inst)).with_transform(Affine::translate(30.0, 30.0)));
         let pm = render_frame(&doc, 0, 0, 1.0, false, &mut RenderCache::new()).unwrap();
         let center = px(&pm, 50, 50);
         assert!(center[2] > 200 && center[0] < 30, "{center:?}");

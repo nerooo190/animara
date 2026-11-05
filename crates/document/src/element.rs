@@ -163,7 +163,11 @@ impl BlendMode {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Filter {
-    Blur { blur_x: f64, blur_y: f64, quality: u32 },
+    Blur {
+        blur_x: f64,
+        blur_y: f64,
+        quality: u32,
+    },
     DropShadow {
         blur_x: f64,
         blur_y: f64,
@@ -176,9 +180,22 @@ pub enum Filter {
         inner: bool,
         hide_object: bool,
     },
-    Glow { blur_x: f64, blur_y: f64, strength: f32, quality: u32, color: Color, knockout: bool, inner: bool },
+    Glow {
+        blur_x: f64,
+        blur_y: f64,
+        strength: f32,
+        quality: u32,
+        color: Color,
+        knockout: bool,
+        inner: bool,
+    },
     /// brightness/contrast/saturation in -100..100, hue in -180..180.
-    AdjustColor { brightness: f32, contrast: f32, saturation: f32, hue: f32 },
+    AdjustColor {
+        brightness: f32,
+        contrast: f32,
+        saturation: f32,
+        hue: f32,
+    },
 }
 
 impl Filter {
@@ -200,7 +217,15 @@ impl Filter {
         }
     }
     pub fn default_glow() -> Filter {
-        Filter::Glow { blur_x: 5.0, blur_y: 5.0, strength: 1.0, quality: 1, color: Color::rgb(1.0, 0.0, 0.0), knockout: false, inner: false }
+        Filter::Glow {
+            blur_x: 5.0,
+            blur_y: 5.0,
+            strength: 1.0,
+            quality: 1,
+            color: Color::rgb(1.0, 0.0, 0.0),
+            knockout: false,
+            inner: false,
+        }
     }
     pub fn name(&self) -> &'static str {
         match self {
@@ -228,7 +253,18 @@ impl Filter {
                 Filter::Blur { blur_x: l(*ax, *bx, t), blur_y: l(*ay, *by, t), quality: *quality }
             }
             (
-                Filter::DropShadow { blur_x: ax, blur_y: ay, strength: asg, angle: aa, distance: ad, color: ac, quality, knockout, inner, hide_object },
+                Filter::DropShadow {
+                    blur_x: ax,
+                    blur_y: ay,
+                    strength: asg,
+                    angle: aa,
+                    distance: ad,
+                    color: ac,
+                    quality,
+                    knockout,
+                    inner,
+                    hide_object,
+                },
                 Filter::DropShadow { blur_x: bx, blur_y: by, strength: bs, angle: ba, distance: bd, color: bc, .. },
             ) => Filter::DropShadow {
                 blur_x: l(*ax, *bx, t),

@@ -28,15 +28,14 @@ pub struct XflImport {
 
 type Reader<'a> = dyn Fn(&str) -> Option<Vec<u8>> + 'a;
 
-struct Ctx<'a> {
-    read: &'a Reader<'a>,
+struct Ctx {
     symbols: HashMap<String, Id>,
     bitmaps: HashMap<String, Id>,
     sounds: HashMap<String, Id>,
     warnings: Vec<String>,
 }
 
-impl Ctx<'_> {
+impl Ctx {
     fn warn(&mut self, w: String) {
         if !self.warnings.contains(&w) {
             self.warnings.push(w);
@@ -53,7 +52,8 @@ pub fn parse_twips(tok: &str) -> Option<f64> {
             None => (h, None),
         };
         let v = u32::from_str_radix(int, 16).ok()? as i32 as f64;
-        let f = frac.and_then(|f| u32::from_str_radix(f, 16).ok()).map(|x| x as f64 / 16f64.powi(frac.unwrap().len() as i32)).unwrap_or(0.0);
+        let f =
+            frac.and_then(|f| u32::from_str_radix(f, 16).ok()).map(|x| x as f64 / 16f64.powi(frac.unwrap().len() as i32)).unwrap_or(0.0);
         Some(v + f)
     } else {
         t.parse().ok()
@@ -73,7 +73,7 @@ pub(crate) fn parse_edges(s: &str) -> Vec<(Vec2, Option<Vec2>, Vec2)> {
     let mut pos = Vec2::ZERO;
     let chars: Vec<char> = s.chars().collect();
     let mut i = 0;
-    let mut nums = |i: &mut usize, n: usize| -> Option<Vec<f64>> {
+    let nums = |i: &mut usize, n: usize| -> Option<Vec<f64>> {
         let mut v = Vec::with_capacity(n);
         while v.len() < n {
             while *i < chars.len() && chars[*i].is_whitespace() {
@@ -178,7 +178,9 @@ fn color_attr(n: &XmlNode, k: &str, alpha_key: &str) -> Color {
 
 fn matrix(n: Option<&XmlNode>) -> Affine {
     match n.and_then(|m| m.child("Matrix")) {
-        Some(m) => Affine::new(m.f_or("a", 1.0), m.f_or("b", 0.0), m.f_or("c", 0.0), m.f_or("d", 1.0), m.f_or("tx", 0.0), m.f_or("ty", 0.0)),
+        Some(m) => {
+            Affine::new(m.f_or("a", 1.0), m.f_or("b", 0.0), m.f_or("c", 0.0), m.f_or("d", 1.0), m.f_or("tx", 0.0), m.f_or("ty", 0.0))
+        }
         None => Affine::IDENTITY,
     }
 }
@@ -234,7 +236,11 @@ fn stroke_style(ctx: &mut Ctx, n: &XmlNode) -> Option<Stroke> {
     let fill = k.child("fill").and_then(|f| fill_style(ctx, f)).unwrap_or(Fill::solid(Color::BLACK));
     let style = match k.name.as_str() {
         "SolidStroke" => {
-            if k.attr("solidStyle") == Some("hairline") { StrokeStyle::Hairline } else { StrokeStyle::Solid }
+            if k.attr("solidStyle") == Some("hairline") {
+                StrokeStyle::Hairline
+            } else {
+                StrokeStyle::Solid
+            }
         }
         "DashedStroke" => StrokeStyle::Dashed { dash: k.f_or("dash1", 6.0), gap: k.f_or("dash2", 6.0) },
         "DottedStroke" => StrokeStyle::Dotted { spacing: k.f_or("dotSpace", 3.0) },
@@ -323,7 +329,12 @@ fn primitive(ctx: &mut Ctx, n: &XmlNode) -> Element {
     let prim = if n.name == "DOMRectangleObject" {
         Primitive::Rect { rect: r, corner_radius: n.f_or("topLeftRadius", 0.0) }
     } else {
-        Primitive::Oval { rect: r, start_angle: n.f_or("startAngle", 0.0), end_angle: n.f_or("endAngle", 0.0), inner_radius: n.f_or("innerRadius", 0.0) / 100.0 }
+        Primitive::Oval {
+            rect: r,
+            start_angle: n.f_or("startAngle", 0.0),
+            end_angle: n.f_or("endAngle", 0.0),
+            inner_radius: n.f_or("innerRadius", 0.0) / 100.0,
+        }
     };
     let fill = n.child("fill").and_then(|f| fill_style(ctx, f));
     let stroke = n.child("stroke").and_then(|s| stroke_style(ctx, s));
@@ -347,9 +358,7 @@ fn color_effect(n: Option<&XmlNode>) -> ColorEffect {
         }
         return ColorEffect::Alpha { alpha: mul[3] as f32 };
     }
-    ColorEffect::Advanced {
-        transform: ColorTransform { mul: mul.map(|v| v as f32), add: add.map(|v| (v / 255.0) as f32) },
-    }
+    ColorEffect::Advanced { transform: ColorTransform { mul: mul.map(|v| v as f32), add: add.map(|v| (v / 255.0) as f32) } }
 }
 
 fn filters(ctx: &mut Ctx, n: Option<&XmlNode>) -> Vec<Filter> {
@@ -376,7 +385,11 @@ fn filters(ctx: &mut Ctx, n: Option<&XmlNode>) -> Vec<Filter> {
                 blur_y: f.f_or("blurY", 5.0),
                 strength: f.f_or("strength", 1.0) as f32,
                 quality: q,
-                color: f.attr("color").and_then(Color::from_hex).unwrap_or(Color::rgb(1.0, 0.0, 0.0)).with_alpha(f.f_or("alpha", 1.0) as f32),
+                color: f
+                    .attr("color")
+                    .and_then(Color::from_hex)
+                    .unwrap_or(Color::rgb(1.0, 0.0, 0.0))
+                    .with_alpha(f.f_or("alpha", 1.0) as f32),
                 knockout: f.attr("knockout") == Some("true"),
                 inner: f.attr("inner") == Some("true"),
             }),
@@ -504,7 +517,9 @@ fn elements(ctx: &mut Ctx, list: &[XmlNode]) -> Vec<Element> {
             "DOMBitmapInstance" => {
                 let name = n.attr("libraryItemName").unwrap_or_default();
                 match ctx.bitmaps.get(name) {
-                    Some(&id) => out.push(Element::new(ElementKind::Bitmap(BitmapInstance { asset: id })).with_transform(matrix(n.child("matrix")))),
+                    Some(&id) => {
+                        out.push(Element::new(ElementKind::Bitmap(BitmapInstance { asset: id })).with_transform(matrix(n.child("matrix"))))
+                    }
                     None => ctx.warn(format!("bitmap instance references missing bitmap '{name}'")),
                 }
             }
@@ -575,7 +590,8 @@ fn timeline(ctx: &mut Ctx, n: &XmlNode) -> Timeline {
             }
             match f.attr("tweenType") {
                 Some("motion") | Some("motion object") => {
-                    let mut t = Tween::new(if f.attr("tweenType") == Some("motion object") { TweenKind::Motion } else { TweenKind::Classic });
+                    let mut t =
+                        Tween::new(if f.attr("tweenType") == Some("motion object") { TweenKind::Motion } else { TweenKind::Classic });
                     if let Some(a) = f.f("acceleration") {
                         t.ease = animara_document::Ease::Classic { strength: a as i32 };
                     }
@@ -688,7 +704,7 @@ fn bitmap_from_dat(data: &[u8]) -> Option<Vec<u8>> {
             return None;
         }
         let mut img = image::RgbaImage::new(w, h);
-        for (px, c) in img.pixels_mut().zip(payload.chunks_exact(4)) {
+        for (px, c) in img.pixels_mut().zip(payload.as_chunks::<4>().0.iter()) {
             // ARGB, premultiplied.
             let a = c[0];
             let un = |v: u8| if a == 0 { 0 } else { ((v as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
@@ -710,7 +726,7 @@ fn import_with(read: &Reader) -> Result<XflImport, ImportError> {
     let mut doc = Document::new(root.f_or("width", 550.0), root.f_or("height", 400.0), root.f_or("frameRate", 24.0));
     doc.background = root.attr("backgroundColor").and_then(Color::from_hex).unwrap_or(Color::WHITE);
     doc.scenes.clear();
-    let mut ctx = Ctx { read, symbols: HashMap::new(), bitmaps: HashMap::new(), sounds: HashMap::new(), warnings: Vec::new() };
+    let mut ctx = Ctx { symbols: HashMap::new(), bitmaps: HashMap::new(), sounds: HashMap::new(), warnings: Vec::new() };
     for f in root.list("folders", "DOMFolderItem") {
         if let Some(n) = f.attr("name") {
             doc.library.folders.push(n.to_string());
@@ -747,7 +763,10 @@ fn import_with(read: &Reader) -> Result<XflImport, ImportError> {
                     let bytes = read(&format!("LIBRARY/{href}")).or_else(|| read(&format!("LIBRARY/{name}")));
                     match bytes {
                         Some(b) => {
-                            let ext = std::path::Path::new(&href).extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_else(|| "wav".into());
+                            let ext = std::path::Path::new(&href)
+                                .extension()
+                                .map(|e| e.to_string_lossy().to_lowercase())
+                                .unwrap_or_else(|| "wav".into());
                             let id = fresh_id();
                             ctx.sounds.insert(name.clone(), id);
                             doc.library.sounds.push(animara_document::SoundAsset {
@@ -845,7 +864,8 @@ pub fn import_fla(path: &std::path::Path) -> Result<XflImport, ImportError> {
     let bytes = std::fs::read(path)?;
     if bytes.starts_with(&[0xD0, 0xCF, 0x11, 0xE0]) {
         return Err(ImportError::Unsupported(
-            "this is a legacy binary FLA (Flash CS4 or earlier). Re-save it as CS5+ FLA or XFL in the original application to import it.".into(),
+            "this is a legacy binary FLA (Flash CS4 or earlier). Re-save it as CS5+ FLA or XFL in the original application to import it."
+                .into(),
         ));
     }
     let zip = std::cell::RefCell::new(zip::ZipArchive::new(std::io::Cursor::new(bytes))?);

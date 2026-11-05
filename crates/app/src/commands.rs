@@ -14,6 +14,7 @@ macro_rules! commands {
             pub fn category(self) -> &'static str { match self { $( Command::$name => $cat ),* } }
             pub fn default_shortcut(self) -> Option<KeyboardShortcut> { match self { $( Command::$name => $sc ),* } }
             pub fn id(self) -> &'static str { match self { $( Command::$name => stringify!($name) ),* } }
+            #[cfg_attr(not(test), allow(dead_code))]
             pub fn from_id(s: &str) -> Option<Command> { match s { $( stringify!($name) => Some(Command::$name), )* _ => None } }
         }
     };
@@ -73,7 +74,7 @@ commands! {
     ExitSymbol => ("Exit Symbol Editing", "Edit", None),
     Preferences => ("Preferences…", "Edit", ks(CMD, Key::U)),
     KeyboardShortcuts => ("Keyboard Shortcuts…", "Edit", None),
-    CommandPalette => ("Command Palette…", "Edit", ks(CMD_SHIFT, Key::P)),
+    Palette => ("Command Palette…", "Edit", ks(CMD_SHIFT, Key::P)),
     // View
     ZoomIn => ("Zoom In", "View", ks(CMD, Key::Equals)),
     ZoomOut => ("Zoom Out", "View", ks(CMD, Key::Minus)),
@@ -154,7 +155,7 @@ commands! {
     TextAlignRight => ("Align Text Right", "Text", None),
     TextToOutlines => ("Convert Text to Outlines", "Text", None),
     // Commands
-    RunScriptCommand => ("Run Command Script…", "Commands", None),
+    RunScript => ("Run Command Script…", "Commands", None),
     ManagePlugins => ("Manage Plugins…", "Commands", None),
     // Control
     PlayStop => ("Play / Stop", "Control", ks(NONE, Key::Enter)),
@@ -197,20 +198,15 @@ commands! {
     ShowHelp => ("Animara Help", "Help", ks(NONE, Key::F1)),
 }
 
-/// Human-readable shortcut text.
-pub fn shortcut_text(ctx: &egui::Context, s: &KeyboardShortcut) -> String {
-    ctx.format_shortcut(s)
-}
-
 /// Parse a shortcut from text such as `Ctrl+Shift+S` (used by the shortcut editor).
 pub fn parse_shortcut(text: &str) -> Option<KeyboardShortcut> {
     let mut mods = Modifiers::NONE;
     let mut key = None;
     for part in text.split('+').map(|s| s.trim()) {
         match part.to_ascii_lowercase().as_str() {
-            "ctrl" | "cmd" | "command" | "⌘" => mods = mods | Modifiers::COMMAND,
-            "shift" | "⇧" => mods = mods | Modifiers::SHIFT,
-            "alt" | "option" | "⌥" => mods = mods | Modifiers::ALT,
+            "ctrl" | "cmd" | "command" | "⌘" => mods |= Modifiers::COMMAND,
+            "shift" | "⇧" => mods |= Modifiers::SHIFT,
+            "alt" | "option" | "⌥" => mods |= Modifiers::ALT,
             other => key = Key::from_name(other).or_else(|| Key::from_name(&other.to_uppercase())).or_else(|| Key::from_name(part)),
         }
     }
@@ -257,7 +253,10 @@ mod tests {
         for c in Command::ALL {
             assert_eq!(Command::from_id(c.id()), Some(*c));
             if let Some(s) = c.default_shortcut() {
-                assert!(seen.insert((s.modifiers.command, s.modifiers.shift, s.modifiers.alt, s.logical_key)), "duplicate shortcut for {c:?}");
+                assert!(
+                    seen.insert((s.modifiers.command, s.modifiers.shift, s.modifiers.alt, s.logical_key)),
+                    "duplicate shortcut for {c:?}"
+                );
             }
         }
     }

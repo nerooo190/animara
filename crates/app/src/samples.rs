@@ -1,8 +1,8 @@
 //! Built-in sample documents (generated procedurally — no bundled assets) and help text.
 
 use animara_document::{
-    CameraState, Color, Document, Element, ElementKind, Fill, Keyframe, LayerKind, ShapePath, Stroke, SymbolKind, TextElement, TextStyle, Tween,
-    TweenKind,
+    CameraState, Color, Document, Element, ElementKind, Fill, Keyframe, LayerKind, ShapePath, Stroke, SymbolKind, TextElement, TextStyle,
+    Tween, TweenKind,
 };
 use animara_geometry::{Affine, Path, Rect, Vec2};
 
@@ -22,11 +22,16 @@ fn bouncing_ball() -> Document {
     let id = crate::thumbs::build_default_asset(&mut doc, "Bouncing Ball");
     let tl = &mut doc.scenes[0].timeline;
     tl.layers[0].name = "Ball".into();
-    tl.layers[0].frames[0].elements.push(Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(id))).with_transform(Affine::translate(640.0, 560.0)));
+    tl.layers[0].frames[0].elements.push(
+        Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(id))).with_transform(Affine::translate(640.0, 560.0)),
+    );
     tl.layers[0].extend_to(59);
     let g = tl.add_layer("Ground", 1);
     let gl = tl.layer_mut(g).unwrap();
-    gl.frames[0].elements.push(Element::shape(vec![ShapePath::filled(Path::rect(Rect::new(0.0, 580.0, 1280.0, 720.0)), Fill::solid(Color::from_rgba8(0x6a, 0xb0, 0x4c, 255)))]));
+    gl.frames[0].elements.push(Element::shape(vec![ShapePath::filled(
+        Path::rect(Rect::new(0.0, 580.0, 1280.0, 720.0)),
+        Fill::solid(Color::from_rgba8(0x6a, 0xb0, 0x4c, 255)),
+    )]));
     doc
 }
 
@@ -37,7 +42,10 @@ fn shape_morph() -> Document {
     l.frames = vec![Keyframe::new(0, 24), Keyframe::new(24, 24), Keyframe::new(48, 1)];
     let shapes = [
         ShapePath::filled(Path::rect(Rect::new(300.0, 200.0, 500.0, 400.0)), Fill::solid(Color::from_rgba8(0xe7, 0x4c, 0x3c, 255))),
-        ShapePath::filled(Path::star(Vec2::new(400.0, 300.0), 140.0, 5, 0.45, -std::f64::consts::FRAC_PI_2), Fill::solid(Color::from_rgba8(0xf1, 0xc4, 0x0f, 255))),
+        ShapePath::filled(
+            Path::star(Vec2::new(400.0, 300.0), 140.0, 5, 0.45, -std::f64::consts::FRAC_PI_2),
+            Fill::solid(Color::from_rgba8(0xf1, 0xc4, 0x0f, 255)),
+        ),
         ShapePath::filled(Path::ellipse(Rect::new(300.0, 200.0, 500.0, 400.0)), Fill::solid(Color::from_rgba8(0x34, 0x98, 0xdb, 255))),
     ];
     for (k, s) in l.frames.iter_mut().zip(shapes) {
@@ -55,7 +63,10 @@ fn waving_arm() -> Document {
     doc.name = "Waving Arm".into();
     let id = crate::thumbs::build_default_asset(&mut doc, "Waving Arm (rig)");
     let l = &mut doc.scenes[0].timeline.layers[0];
-    l.frames[0].elements.push(Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(id))).with_transform(Affine::translate(300.0, 400.0) * Affine::scale(2.0, 2.0)));
+    l.frames[0].elements.push(
+        Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(id)))
+            .with_transform(Affine::translate(300.0, 400.0) * Affine::scale(2.0, 2.0)),
+    );
     l.extend_to(47);
     doc
 }
@@ -99,16 +110,23 @@ fn interactive() -> Document {
     l.name = "Content".into();
     l.frames = vec![Keyframe::new(0, 1), Keyframe::new(1, 1)];
     let text = |s: &str| {
-        Element::new(ElementKind::Text(TextElement::new(s, TextStyle { size: 40.0, color: Color::from_rgba8(30, 30, 30, 255), ..TextStyle::default() })))
-            .with_transform(Affine::translate(250.0, 120.0))
+        Element::new(ElementKind::Text(TextElement::new(
+            s,
+            TextStyle { size: 40.0, color: Color::from_rgba8(30, 30, 30, 255), ..TextStyle::default() },
+        )))
+        .with_transform(Affine::translate(250.0, 120.0))
     };
     l.frames[0].elements.push(text("Page one"));
     l.frames[1].elements.push(text("Page two"));
-    l.frames[1].elements.push(Element::shape(vec![ShapePath::stroked(Path::ellipse(Rect::new(560.0, 100.0, 640.0, 180.0)), Stroke::solid(Color::from_rgba8(0xe7, 0x4c, 0x3c, 255), 6.0))]));
+    l.frames[1].elements.push(Element::shape(vec![ShapePath::stroked(
+        Path::ellipse(Rect::new(560.0, 100.0, 640.0, 180.0)),
+        Stroke::solid(Color::from_rgba8(0xe7, 0x4c, 0x3c, 255), 6.0),
+    )]));
     let ui_id = tl.add_layer("Buttons", 0);
     let ul = tl.layer_mut(ui_id).unwrap();
     ul.frames = vec![Keyframe::new(0, 2)];
-    let mut e = Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(btn))).with_transform(Affine::translate(400.0, 330.0));
+    let mut e =
+        Element::new(ElementKind::Instance(animara_document::SymbolInstance::new(btn))).with_transform(Affine::translate(400.0, 330.0));
     if let Some(i) = e.as_instance_mut() {
         i.instance_name = "next_btn".into();
     }

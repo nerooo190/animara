@@ -7,7 +7,6 @@ mod display;
 mod tween;
 
 pub use display::{
-    DisplayItem, DisplayList, EvalOptions, evaluate_document_frame, evaluate_timeline, recolor_item, scene_at_global_frame,
-    transform_item,
+    DisplayItem, DisplayList, EvalOptions, evaluate_document_frame, evaluate_timeline, recolor_item, scene_at_global_frame, transform_item,
 };
 pub use tween::{camera_at, layer_elements_at, pose_at};

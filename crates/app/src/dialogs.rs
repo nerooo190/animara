@@ -50,7 +50,11 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                             ui.weak("No recent documents.");
                         }
                         for p in recent {
-                            if ui.link(p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()).on_hover_text(p.display().to_string()).clicked() {
+                            if ui
+                                .link(p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default())
+                                .on_hover_text(p.display().to_string())
+                                .clicked()
+                            {
                                 io_ops::open_path(core, &p);
                                 close = true;
                             }
@@ -228,7 +232,11 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                     }
                 });
             });
-            dialog = if is_convert { Dialog::ConvertToSymbol { name: name_v, kind: kind_v, center: center_v } } else { Dialog::NewSymbol { name: name_v, kind: kind_v } };
+            dialog = if is_convert {
+                Dialog::ConvertToSymbol { name: name_v, kind: kind_v, center: center_v }
+            } else {
+                Dialog::NewSymbol { name: name_v, kind: kind_v }
+            };
         }
         Dialog::Export(s) => {
             let total = core.doc().map(|d| d.doc.total_frames()).unwrap_or(1);
@@ -240,7 +248,10 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                 });
                 let video = matches!(s.kind, ExportKind::Mp4 | ExportKind::WebM | ExportKind::Mov | ExportKind::WebP);
                 if video && !animara_media::ffmpeg_available() {
-                    ui.colored_label(egui::Color32::from_rgb(0xe0, 0x80, 0x30), "ffmpeg was not found on PATH — install FFmpeg to export this format.");
+                    ui.colored_label(
+                        egui::Color32::from_rgb(0xe0, 0x80, 0x30),
+                        "ffmpeg was not found on PATH — install FFmpeg to export this format.",
+                    );
                 }
                 egui::Grid::new("exp").num_columns(2).show(ui, |ui| {
                     ui.label("Scale");
@@ -328,7 +339,11 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                 });
                 if let Some(c) = *capturing {
                     ui.label(RichText::new(format!("Press the new shortcut for “{}” (Esc to clear)…", c.label())).strong());
-                    let ev = ui.input(|i| i.events.iter().find_map(|e| if let egui::Event::Key { key, pressed: true, modifiers, .. } = e { Some((*key, *modifiers)) } else { None }));
+                    let ev = ui.input(|i| {
+                        i.events.iter().find_map(|e| {
+                            if let egui::Event::Key { key, pressed: true, modifiers, .. } = e { Some((*key, *modifiers)) } else { None }
+                        })
+                    });
                     if let Some((key, mods)) = ev {
                         if key == egui::Key::Escape {
                             core.settings.shortcuts.insert(c.id().into(), String::new());
@@ -383,7 +398,10 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                 ui.label("A 2D vector animation studio written in Rust.");
                 ui.label("Independent software; not affiliated with or endorsed by Adobe. Adobe Animate is a trademark of Adobe Inc.");
                 ui.separator();
-                ui.label(format!("FFmpeg: {}", if animara_media::ffmpeg_available() { "available" } else { "not found (video import/export disabled)" }));
+                ui.label(format!(
+                    "FFmpeg: {}",
+                    if animara_media::ffmpeg_available() { "available" } else { "not found (video import/export disabled)" }
+                ));
                 if ui.button("Close").clicked() {
                     close = true;
                 }
@@ -418,7 +436,7 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
             window("New Workspace", &mut open).show(ctx, |ui| {
                 ui.text_edit_singleline(name);
                 if ui.button("Save").clicked() {
-                    ctx.data_mut(|d| d.insert_temp(egui::Id::new("save_workspace"), name.clone()));
+                    ctx.data_mut(|d| d.insert_temp(egui::Id::unique("save_workspace"), name.clone()));
                     close = true;
                 }
             });
@@ -527,7 +545,6 @@ pub fn dialogs(core: &mut AppCore, ctx: &egui::Context) {
                 });
             });
         }
-        _ => {}
     }
     if open && !close {
         core.dialog = Some(dialog);
@@ -539,24 +556,32 @@ fn palette(core: &mut AppCore, ctx: &egui::Context) {
     let Some(mut q) = core.palette.take() else { return };
     let mut run = None;
     let mut keep = true;
-    egui::Window::new("Command Palette").title_bar(false).anchor(egui::Align2::CENTER_TOP, [0.0, 60.0]).fixed_size([460.0, 360.0]).show(ctx, |ui| {
-        let r = ui.add(egui::TextEdit::singleline(&mut q).hint_text("Type a command…").desired_width(f32::INFINITY));
-        r.request_focus();
-        let ql = q.to_lowercase();
-        let matches: Vec<C> = C::ALL.iter().copied().filter(|c| ql.split_whitespace().all(|w| c.label().to_lowercase().contains(w) || c.category().to_lowercase().contains(w))).take(14).collect();
-        for (i, c) in matches.iter().enumerate() {
-            let sc = core.settings.shortcut(*c).map(|s| ctx.format_shortcut(&s)).unwrap_or_default();
-            if ui.add(egui::Button::selectable(i == 0, format!("{} › {}", c.category(), c.label())).shortcut_text(sc)).clicked() {
-                run = Some(*c);
+    egui::Window::new("Command Palette").title_bar(false).anchor(egui::Align2::CENTER_TOP, [0.0, 60.0]).fixed_size([460.0, 360.0]).show(
+        ctx,
+        |ui| {
+            let r = ui.add(egui::TextEdit::singleline(&mut q).hint_text("Type a command…").desired_width(f32::INFINITY));
+            r.request_focus();
+            let ql = q.to_lowercase();
+            let matches: Vec<C> = C::ALL
+                .iter()
+                .copied()
+                .filter(|c| ql.split_whitespace().all(|w| c.label().to_lowercase().contains(w) || c.category().to_lowercase().contains(w)))
+                .take(14)
+                .collect();
+            for (i, c) in matches.iter().enumerate() {
+                let sc = core.settings.shortcut(*c).map(|s| ctx.format_shortcut(&s)).unwrap_or_default();
+                if ui.add(egui::Button::selectable(i == 0, format!("{} › {}", c.category(), c.label())).shortcut_text(sc)).clicked() {
+                    run = Some(*c);
+                }
             }
-        }
-        if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-            run = matches.first().copied();
-        }
-        if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-            keep = false;
-        }
-    });
+            if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                run = matches.first().copied();
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                keep = false;
+            }
+        },
+    );
     if let Some(c) = run {
         core.run(c);
         keep = false;

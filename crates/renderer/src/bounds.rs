@@ -80,10 +80,9 @@ fn element_hit_depth(doc: &Document, e: &Element, parent: &Affine, p: Vec2, tol:
     match &e.kind {
         ElementKind::Shape(s) => s.paths.iter().any(|sp| sp.hit(local, ltol)),
         ElementKind::Text(t) => animara_text::fonts().layout(t).bounds.inflate(ltol).contains(local),
-        ElementKind::Bitmap(b) => doc
-            .library
-            .bitmap(b.asset)
-            .is_some_and(|a| Rect::new(0.0, 0.0, a.width as f64, a.height as f64).contains(local)),
+        ElementKind::Bitmap(b) => {
+            doc.library.bitmap(b.asset).is_some_and(|a| Rect::new(0.0, 0.0, a.width as f64, a.height as f64).contains(local))
+        }
         ElementKind::Group { children } => children.iter().any(|c| element_hit_depth(doc, c, &m, p, tol, depth)),
         ElementKind::Instance(i) => {
             if depth > 16 {

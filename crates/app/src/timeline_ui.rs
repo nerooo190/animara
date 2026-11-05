@@ -57,7 +57,9 @@ fn header(core: &mut AppCore, ui: &mut egui::Ui) {
         if icons::button(ui, Icon::Delete, false, "Delete Layer", sz).clicked() {
             ops::delete_layer(st);
         }
-        if icons::button(ui, Icon::Camera, st.timeline().layers.iter().any(|l| l.kind == LayerKind::Camera), "Add / Remove Camera", sz).clicked() {
+        if icons::button(ui, Icon::Camera, st.timeline().layers.iter().any(|l| l.kind == LayerKind::Camera), "Add / Remove Camera", sz)
+            .clicked()
+        {
             if let Some(ci) = st.timeline().layers.iter().position(|l| l.kind == LayerKind::Camera) {
                 st.checkpoint("Remove Camera");
                 let id = st.timeline().layers[ci].id;
@@ -181,14 +183,29 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
     for f in first_frame..first_frame + n_frames {
         let x = fx(f);
         if (f + 1) % 5 == 0 || f == 0 {
-            painter.line_segment([pos2(x + fw / 2.0, ruler_rect.max.y - 6.0), pos2(x + fw / 2.0, ruler_rect.max.y)], Stroke::new(1.0, text.gamma_multiply(0.5)));
+            painter.line_segment(
+                [pos2(x + fw / 2.0, ruler_rect.max.y - 6.0), pos2(x + fw / 2.0, ruler_rect.max.y)],
+                Stroke::new(1.0, text.gamma_multiply(0.5)),
+            );
             if (f + 1) % 5 == 0 && fw * 5.0 > 24.0 || (f + 1) % 10 == 0 {
-                painter.text(pos2(x + fw / 2.0, ruler_rect.min.y + 2.0), egui::Align2::CENTER_TOP, format!("{}", f + 1), egui::FontId::proportional(10.0), text.gamma_multiply(0.8));
+                painter.text(
+                    pos2(x + fw / 2.0, ruler_rect.min.y + 2.0),
+                    egui::Align2::CENTER_TOP,
+                    format!("{}", f + 1),
+                    egui::FontId::proportional(10.0),
+                    text.gamma_multiply(0.8),
+                );
             }
         }
         let fps = st.doc.fps.max(1.0);
         if (f as f64 / fps).fract() < 1e-9 && f > 0 {
-            painter.text(pos2(x + 2.0, ruler_rect.min.y + 1.0), egui::Align2::LEFT_TOP, format!("{}s", (f as f64 / fps) as u32), egui::FontId::proportional(9.0), Color32::from_rgb(0x2b, 0x9c, 0xff));
+            painter.text(
+                pos2(x + 2.0, ruler_rect.min.y + 1.0),
+                egui::Align2::LEFT_TOP,
+                format!("{}s", (f as f64 / fps) as u32),
+                egui::FontId::proportional(9.0),
+                Color32::from_rgb(0x2b, 0x9c, 0xff),
+            );
         }
     }
 
@@ -224,8 +241,20 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             let span = Rect::from_min_max(pos2(fx(k.start), y + 1.0), pos2(fx(k.end()), y + ROW_H - 1.0));
             let fill = match &k.tween {
                 Some(t) => tween_color(t.kind, dark),
-                None if k.elements.is_empty() && k.sound.is_none() && k.camera.is_none() => if dark { Color32::from_gray(66) } else { Color32::WHITE },
-                None => if dark { Color32::from_gray(92) } else { Color32::from_gray(205) },
+                None if k.elements.is_empty() && k.sound.is_none() && k.camera.is_none() => {
+                    if dark {
+                        Color32::from_gray(66)
+                    } else {
+                        Color32::WHITE
+                    }
+                }
+                None => {
+                    if dark {
+                        Color32::from_gray(92)
+                    } else {
+                        Color32::from_gray(205)
+                    }
+                }
             };
             painter_frames.rect_filled(span, 0.0, fill);
             painter_frames.rect_stroke(span, 0.0, Stroke::new(1.0, Color32::from_gray(20)), egui::StrokeKind::Inside);
@@ -247,7 +276,12 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
                     painter_frames.line_segment([b, b + vec2(-5.0, -3.5)], st_);
                     painter_frames.line_segment([b, b + vec2(-5.0, 3.5)], st_);
                 } else {
-                    painter_frames.rect_stroke(Rect::from_min_max(pos2(ex + 2.0, y + 5.0), pos2(ex + fw - 2.0, y + ROW_H - 4.0)), 0.0, Stroke::new(1.0, Color32::from_gray(30)), egui::StrokeKind::Middle);
+                    painter_frames.rect_stroke(
+                        Rect::from_min_max(pos2(ex + 2.0, y + 5.0), pos2(ex + fw - 2.0, y + ROW_H - 4.0)),
+                        0.0,
+                        Stroke::new(1.0, Color32::from_gray(30)),
+                        egui::StrokeKind::Middle,
+                    );
                 }
             }
             if let Some(lb) = &k.label {
@@ -256,10 +290,22 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
                     LabelKind::Comment => ("//", Color32::from_rgb(0x30, 0x90, 0x30)),
                     LabelKind::Anchor => ("⚓", Color32::from_rgb(0xd0, 0x80, 0x10)),
                 };
-                painter_frames.text(pos2(kx - 3.0, y + 1.0), egui::Align2::LEFT_TOP, format!("{icon} {}", lb.name), egui::FontId::proportional(10.0), col);
+                painter_frames.text(
+                    pos2(kx - 3.0, y + 1.0),
+                    egui::Align2::LEFT_TOP,
+                    format!("{icon} {}", lb.name),
+                    egui::FontId::proportional(10.0),
+                    col,
+                );
             }
             if !k.script.is_empty() {
-                painter_frames.text(pos2(kx - 2.0, y + 1.0), egui::Align2::LEFT_TOP, "a", egui::FontId::proportional(10.0), Color32::from_gray(20));
+                painter_frames.text(
+                    pos2(kx - 2.0, y + 1.0),
+                    egui::Align2::LEFT_TOP,
+                    "a",
+                    egui::FontId::proportional(10.0),
+                    Color32::from_gray(20),
+                );
             }
             if let Some(snd) = &k.sound
                 && let Some(peaks) = core.audio.waveform(&st.doc, snd.asset)
@@ -277,7 +323,8 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
                 }
                 for (x, a) in pts_top {
                     let h = a * (ROW_H / 2.0 - 2.0);
-                    painter_frames.line_segment([pos2(x, mid - h), pos2(x, mid + h)], Stroke::new(fw.min(3.0), Color32::from_rgb(0x2b, 0x6c, 0xd0)));
+                    painter_frames
+                        .line_segment([pos2(x, mid - h), pos2(x, mid + h)], Stroke::new(fw.min(3.0), Color32::from_rgb(0x2b, 0x6c, 0xd0)));
                 }
             }
         }
@@ -302,7 +349,13 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             LayerKind::Normal => Icon::Layer,
         };
         if layer.kind == LayerKind::Folder {
-            painter_layers.text(pos2(x, y + ROW_H / 2.0), egui::Align2::LEFT_CENTER, if layer.expanded { "▾" } else { "▸" }, egui::FontId::proportional(12.0), text);
+            painter_layers.text(
+                pos2(x, y + ROW_H / 2.0),
+                egui::Align2::LEFT_CENTER,
+                if layer.expanded { "▾" } else { "▸" },
+                egui::FontId::proportional(12.0),
+                text,
+            );
             x += 10.0;
         }
         icons::paint(&painter_layers, Rect::from_min_size(pos2(x, y + 3.0), vec2(16.0, 16.0)), icon, text);
@@ -311,7 +364,12 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
         if tls.renaming.as_ref().is_none_or(|(id, _)| *id != layer.id) {
             painter_layers.text(pos2(x, y + ROW_H / 2.0), egui::Align2::LEFT_CENTER, &layer.name, egui::FontId::proportional(12.5), text);
             if layer.parent_layer.is_some() {
-                icons::paint(&painter_layers, Rect::from_min_size(pos2(name_rect.max.x - 14.0, y + 5.0), vec2(12.0, 12.0)), Icon::Parent, text.gamma_multiply(0.6));
+                icons::paint(
+                    &painter_layers,
+                    Rect::from_min_size(pos2(name_rect.max.x - 14.0, y + 5.0), vec2(12.0, 12.0)),
+                    Icon::Parent,
+                    text.gamma_multiply(0.6),
+                );
             }
         }
         // Toggles: color/outline, eye, lock.
@@ -323,20 +381,42 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
         } else {
             painter_layers.rect_filled(col_rect, 0.0, lc);
         }
-        icons::paint(&painter_layers, Rect::from_center_size(pos2(lrow.max.x - 40.0, y + ROW_H / 2.0), vec2(16.0, 16.0)), if layer.visible { Icon::Eye } else { Icon::EyeOff }, if layer.visible { text.gamma_multiply(0.7) } else { Color32::from_rgb(0xd0, 0x40, 0x40) });
-        icons::paint(&painter_layers, Rect::from_center_size(pos2(lrow.max.x - 16.0, y + ROW_H / 2.0), vec2(16.0, 16.0)), if layer.locked { Icon::Lock } else { Icon::Unlock }, if layer.locked { text } else { text.gamma_multiply(0.3) });
+        icons::paint(
+            &painter_layers,
+            Rect::from_center_size(pos2(lrow.max.x - 40.0, y + ROW_H / 2.0), vec2(16.0, 16.0)),
+            if layer.visible { Icon::Eye } else { Icon::EyeOff },
+            if layer.visible { text.gamma_multiply(0.7) } else { Color32::from_rgb(0xd0, 0x40, 0x40) },
+        );
+        icons::paint(
+            &painter_layers,
+            Rect::from_center_size(pos2(lrow.max.x - 16.0, y + ROW_H / 2.0), vec2(16.0, 16.0)),
+            if layer.locked { Icon::Lock } else { Icon::Unlock },
+            if layer.locked { text } else { text.gamma_multiply(0.3) },
+        );
     }
     // Playhead.
     let ph = fx(st.frame) + fw / 2.0;
     if ph >= frames_rect.min.x && ph <= frames_rect.max.x {
         let col = Color32::from_rgb(0x2b, 0x80, 0xff);
         painter.rect_filled(Rect::from_center_size(pos2(ph, ruler_rect.center().y), vec2(fw.max(8.0), RULER_H - 4.0)), 2.0, col);
-        painter.text(pos2(ph, ruler_rect.center().y), egui::Align2::CENTER_CENTER, format!("{}", st.frame + 1), egui::FontId::proportional(9.5), Color32::WHITE);
+        painter.text(
+            pos2(ph, ruler_rect.center().y),
+            egui::Align2::CENTER_CENTER,
+            format!("{}", st.frame + 1),
+            egui::FontId::proportional(9.5),
+            Color32::WHITE,
+        );
         painter.line_segment([pos2(ph, frames_rect.min.y), pos2(ph, frames_rect.max.y)], Stroke::new(1.0, col));
     }
     // Header strip for layer column.
     painter.rect_filled(Rect::from_min_max(area.min, pos2(area.min.x + LAYER_W, area.min.y + RULER_H)), 0.0, bg);
-    painter.text(pos2(area.min.x + 8.0, area.min.y + RULER_H / 2.0), egui::Align2::LEFT_CENTER, format!("{} frames", tl_len), egui::FontId::proportional(10.0), text.gamma_multiply(0.6));
+    painter.text(
+        pos2(area.min.x + 8.0, area.min.y + RULER_H / 2.0),
+        egui::Align2::LEFT_CENTER,
+        format!("{} frames", tl_len),
+        egui::FontId::proportional(10.0),
+        text.gamma_multiply(0.6),
+    );
 
     // ---------------- Interaction
     let pointer = ui.input(|i| i.pointer.interact_pos());
@@ -429,12 +509,13 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
                     st.frame_sel = Some(FrameSel { layer0: li, layer1: li, f0: k.start, f1: k.end() - 1 });
                 }
             }
-            if resp.dragged() && tls.drag_select {
-                if let (Some(li), Some(s)) = (row_at(p), st.frame_sel) {
-                    let f = frame_at(p);
-                    st.frame_sel = Some(FrameSel { layer1: li, f1: f, ..s });
-                    st.frame = f.min(tl_len.saturating_sub(1).max(f));
-                }
+            if resp.dragged()
+                && tls.drag_select
+                && let (Some(li), Some(s)) = (row_at(p), st.frame_sel)
+            {
+                let f = frame_at(p);
+                st.frame_sel = Some(FrameSel { layer1: li, f1: f, ..s });
+                st.frame = f.min(tl_len.saturating_sub(1).max(f));
             }
         }
         if resp.secondary_clicked() {
@@ -480,14 +561,22 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
         {
             let r = visible_rows.iter().position(|&x| x == row_at(p).unwrap_or(from)).unwrap_or(0);
             let y = row_y(r);
-            painter.line_segment([pos2(layers_rect.min.x, y), pos2(layers_rect.max.x, y)], Stroke::new(2.0, Color32::from_rgb(0x2b, 0x9c, 0xff)));
+            painter.line_segment(
+                [pos2(layers_rect.min.x, y), pos2(layers_rect.max.x, y)],
+                Stroke::new(2.0, Color32::from_rgb(0x2b, 0x9c, 0xff)),
+            );
         }
         if let Some((li, _)) = tls.drag_keyframe
             && resp.dragged()
         {
             let r = visible_rows.iter().position(|&x| x == li).unwrap_or(0);
             let x = fx(frame_at(p));
-            painter.rect_stroke(Rect::from_min_size(pos2(x, row_y(r)), vec2(fw, ROW_H)), 0.0, Stroke::new(2.0, Color32::from_rgb(0x2b, 0x9c, 0xff)), egui::StrokeKind::Middle);
+            painter.rect_stroke(
+                Rect::from_min_size(pos2(x, row_y(r)), vec2(fw, ROW_H)),
+                0.0,
+                Stroke::new(2.0, Color32::from_rgb(0x2b, 0x9c, 0xff)),
+                egui::StrokeKind::Middle,
+            );
         }
     }
     // Inline rename.
@@ -496,7 +585,10 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             && let Some(r) = visible_rows.iter().position(|&x| x == li)
         {
             let y = row_y(r);
-            let rect = Rect::from_min_max(pos2(layers_rect.min.x + 26.0 + tl.folder_depth(li) as f32 * 12.0, y + 1.0), pos2(layers_rect.max.x - 72.0, y + ROW_H - 1.0));
+            let rect = Rect::from_min_max(
+                pos2(layers_rect.min.x + 26.0 + tl.folder_depth(li) as f32 * 12.0, y + 1.0),
+                pos2(layers_rect.max.x - 72.0, y + ROW_H - 1.0),
+            );
             let te = ui.put(rect, egui::TextEdit::singleline(&mut name).id_salt("layer_rename"));
             te.request_focus();
             if te.lost_focus() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
@@ -543,15 +635,15 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
             }
             ui.separator();
             if ui.button("Copy Frames").clicked() {
-                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("copy_frames"), true));
+                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("copy_frames"), true));
                 ui.close();
             }
             if ui.button("Cut Frames").clicked() {
-                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("cut_frames"), true));
+                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("cut_frames"), true));
                 ui.close();
             }
             if ui.button("Paste Frames").clicked() {
-                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("paste_frames"), true));
+                ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("paste_frames"), true));
                 ui.close();
             }
             ui.separator();
@@ -563,9 +655,9 @@ fn body(core: &mut AppCore, ui: &mut egui::Ui, tls: &mut TimelineUiState) {
         }
     });
     let flags = ui.ctx().data_mut(|d| {
-        let c = d.remove_temp::<bool>(egui::Id::new("copy_frames")).is_some();
-        let x = d.remove_temp::<bool>(egui::Id::new("cut_frames")).is_some();
-        let p = d.remove_temp::<bool>(egui::Id::new("paste_frames")).is_some();
+        let c = d.remove_temp::<bool>(egui::Id::unique("copy_frames")).is_some();
+        let x = d.remove_temp::<bool>(egui::Id::unique("cut_frames")).is_some();
+        let p = d.remove_temp::<bool>(egui::Id::unique("paste_frames")).is_some();
         (c, x, p)
     });
     if flags.0 || flags.1 {
@@ -619,7 +711,7 @@ fn layer_menu(st: &mut crate::state::DocState, ui: &mut egui::Ui, cmds: &mut Vec
         ui.close();
     }
     ui.separator();
-    let mut set_kind = |st: &mut crate::state::DocState, kind: LayerKind, label: &str| {
+    let set_kind = |st: &mut crate::state::DocState, kind: LayerKind, label: &str| {
         st.checkpoint(label);
         let l = &mut st.timeline_mut().layers[li];
         l.kind = kind;
@@ -679,8 +771,14 @@ fn layer_menu(st: &mut crate::state::DocState, ui: &mut egui::Ui, cmds: &mut Vec
             st.timeline_mut().layers[li].parent_layer = None;
             ui.close();
         }
-        let others: Vec<(animara_document::Id, String)> =
-            st.timeline().layers.iter().enumerate().filter(|(i, l)| *i != li && l.kind == LayerKind::Normal).map(|(_, l)| (l.id, l.name.clone())).collect();
+        let others: Vec<(animara_document::Id, String)> = st
+            .timeline()
+            .layers
+            .iter()
+            .enumerate()
+            .filter(|(i, l)| *i != li && l.kind == LayerKind::Normal)
+            .map(|(_, l)| (l.id, l.name.clone()))
+            .collect();
         for (id, name) in others {
             if ui.selectable_label(layer.parent_layer == Some(id), name).clicked() {
                 st.checkpoint("Parent Layer");

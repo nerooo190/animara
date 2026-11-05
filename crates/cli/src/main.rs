@@ -81,7 +81,12 @@ fn run(args: Vec<String>) -> Result<(), String> {
             for s in &d.scenes {
                 println!("  scene '{}': {} layers, {} frames", s.name, s.timeline.layers.len(), s.timeline.length());
             }
-            println!("library: {} symbols, {} bitmaps, {} sounds", d.library.symbols.len(), d.library.bitmaps.len(), d.library.sounds.len());
+            println!(
+                "library: {} symbols, {} bitmaps, {} sounds",
+                d.library.symbols.len(),
+                d.library.bitmaps.len(),
+                d.library.sounds.len()
+            );
         }
         "validate" => {
             let d = load(Path::new(args.get(1).ok_or(USAGE)?))?;
@@ -136,7 +141,9 @@ fn run(args: Vec<String>) -> Result<(), String> {
             let e = |e: animara_exporters::ExportError| e.to_string();
             let notes: Vec<String> = match fmt.as_str() {
                 "png" => animara_exporters::export_png(&d, o.range.map(|r| r.0).unwrap_or(0), &out, &o).map(|_| vec![]).map_err(e)?,
-                "png-seq" => animara_exporters::export_png_sequence(&d, &out, &base, &o).map(|v| vec![format!("{} files", v.len())]).map_err(e)?,
+                "png-seq" => {
+                    animara_exporters::export_png_sequence(&d, &out, &base, &o).map(|v| vec![format!("{} files", v.len())]).map_err(e)?
+                }
                 "gif" => animara_exporters::export_gif(&d, &out, &o).map(|_| vec![]).map_err(e)?,
                 "apng" => animara_exporters::export_apng(&d, &out, &o).map(|_| vec![]).map_err(e)?,
                 "webp" => animara_exporters::export_video(&d, &out, VideoFormat::WebP, &o).map(|_| vec![]).map_err(e)?,
@@ -144,8 +151,12 @@ fn run(args: Vec<String>) -> Result<(), String> {
                 "webm" => animara_exporters::export_video(&d, &out, VideoFormat::WebM, &o).map(|_| vec![]).map_err(e)?,
                 "mov" => animara_exporters::export_video(&d, &out, VideoFormat::Mov, &o).map(|_| vec![]).map_err(e)?,
                 "svg" => animara_exporters::export_svg_frame(&d, o.range.map(|r| r.0).unwrap_or(0), &out, &o).map(|_| vec![]).map_err(e)?,
-                "svg-seq" => animara_exporters::export_svg_sequence(&d, &out, &base, &o).map(|v| vec![format!("{} files", v.len())]).map_err(e)?,
-                "sprite" => animara_exporters::export_sprite_sheet(&d, &out, &o).map(|j| vec![format!("metadata {}", j.display())]).map_err(e)?,
+                "svg-seq" => {
+                    animara_exporters::export_svg_sequence(&d, &out, &base, &o).map(|v| vec![format!("{} files", v.len())]).map_err(e)?
+                }
+                "sprite" => {
+                    animara_exporters::export_sprite_sheet(&d, &out, &o).map(|j| vec![format!("metadata {}", j.display())]).map_err(e)?
+                }
                 "lottie" => animara_exporters::export_lottie(&d, &out, &o).map_err(e)?,
                 "html" => animara_exporters::export_html5(&d, &out, &o).map(|_| vec![]).map_err(e)?,
                 "swf" => animara_exporters::export_swf(&d, &out, &o).map_err(e)?,

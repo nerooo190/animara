@@ -94,13 +94,6 @@ impl Tool {
         let n = self.name();
         n.split(" Tool").next().unwrap_or(n)
     }
-
-    pub fn draws(self) -> bool {
-        matches!(
-            self,
-            Tool::Pen | Tool::Pencil | Tool::Brush | Tool::ClassicBrush | Tool::Line | Tool::Rectangle | Tool::Oval | Tool::PolyStar | Tool::Text
-        )
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -209,7 +202,8 @@ impl ToolSettings {
             FillKind::Solid => Fill::solid(self.fill_color),
             FillKind::Linear => Fill::Linear {
                 stops: self.gradient.clone(),
-                matrix: Affine::translate(bounds.center().x, bounds.center().y) * Affine::scale(bounds.width().max(1.0) / 2.0, bounds.width().max(1.0) / 2.0),
+                matrix: Affine::translate(bounds.center().x, bounds.center().y)
+                    * Affine::scale(bounds.width().max(1.0) / 2.0, bounds.width().max(1.0) / 2.0),
                 spread: SpreadMode::Pad,
             },
             FillKind::Radial => {
@@ -247,7 +241,6 @@ pub enum Drag {
     },
     Move {
         last: Vec2,
-        started: bool,
     },
     Transform {
         handle: Handle,
@@ -263,9 +256,6 @@ pub enum Drag {
     },
     Rect {
         start: Vec2,
-    },
-    Pan {
-        last_screen: egui::Pos2,
     },
     Lasso {
         points: Vec<Vec2>,
@@ -318,5 +308,4 @@ pub struct ToolState {
     /// Asset-warp pins for the element being warped (element id, local pin positions).
     pub warp_pins: Option<(animara_document::Id, Vec<Vec2>)>,
     pub last_pointer_doc: Vec2,
-    pub hover_handle: Option<Handle>,
 }

@@ -37,7 +37,14 @@ pub struct Symbol {
 
 impl Symbol {
     pub fn new(name: &str, kind: SymbolKind) -> Symbol {
-        Symbol { id: fresh_id(), name: name.to_string(), kind, timeline: Timeline::with_layer("Layer 1"), folder: String::new(), linkage: String::new() }
+        Symbol {
+            id: fresh_id(),
+            name: name.to_string(),
+            kind,
+            timeline: Timeline::with_layer("Layer 1"),
+            folder: String::new(),
+            linkage: String::new(),
+        }
     }
 }
 

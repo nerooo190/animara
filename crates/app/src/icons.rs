@@ -4,6 +4,7 @@ use crate::tools::Tool;
 use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, pos2, vec2};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)] // complete icon set; not every icon is placed in the default layout
 pub enum Icon {
     Tool(Tool),
     NewLayer,
@@ -98,7 +99,7 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
                     at(8.0 + 3.0 * t.cos(), 7.5 + 4.0 * t.sin())
                 })
                 .collect();
-            let arc = if icon == Icon::Unlock { arc.into_iter().map(|q| q + vec2(3.0 * u, -1.0 * u)).collect() } else { arc };
+            let arc = if icon == Icon::Unlock { arc.into_iter().map(|q| q + vec2(3.0 * u, -u)).collect() } else { arc };
             p.add(Shape::line(arc, s));
         }
         Icon::Outline => {
@@ -141,7 +142,11 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
                 .collect();
             let end = *arc.last().unwrap();
             p.add(Shape::line(arc, s));
-            p.add(Shape::convex_polygon(vec![end + vec2(-2.5 * u, -1.5 * u), end + vec2(2.0 * u, -1.0 * u), end + vec2(0.0, 2.5 * u)], c, Stroke::NONE));
+            p.add(Shape::convex_polygon(
+                vec![end + vec2(-2.5 * u, -1.5 * u), end + vec2(2.0 * u, -u), end + vec2(0.0, 2.5 * u)],
+                c,
+                Stroke::NONE,
+            ));
         }
         Icon::Onion => {
             p.circle_stroke(at(6.0, 8.0), 4.0 * u, thin);
@@ -160,10 +165,12 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
         Icon::Graph => {
             line(p, at(2.0, 14.0), at(14.0, 14.0), thin);
             line(p, at(2.0, 14.0), at(2.0, 2.0), thin);
-            let pts: Vec<Pos2> = (0..=12).map(|i| {
-                let t = i as f32 / 12.0;
-                at(2.0 + 12.0 * t, 14.0 - 12.0 * (t * t * (3.0 - 2.0 * t)))
-            }).collect();
+            let pts: Vec<Pos2> = (0..=12)
+                .map(|i| {
+                    let t = i as f32 / 12.0;
+                    at(2.0 + 12.0 * t, 14.0 - 12.0 * (t * t * (3.0 - 2.0 * t)))
+                })
+                .collect();
             p.add(Shape::line(pts, s));
         }
         Icon::Layer => {
@@ -175,7 +182,10 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
             p.circle_filled(at(8.0, 6.0), 1.8 * u, c);
         }
         Icon::Masked => {
-            p.add(Shape::closed_line(vec![at(2.0, 6.0), at(8.0, 3.0), at(14.0, 6.0), at(8.0, 9.0)], Stroke::new(1.0, c.gamma_multiply(0.5))));
+            p.add(Shape::closed_line(
+                vec![at(2.0, 6.0), at(8.0, 3.0), at(14.0, 6.0), at(8.0, 9.0)],
+                Stroke::new(1.0, c.gamma_multiply(0.5)),
+            ));
             line(p, at(4.0, 12.0), at(12.0, 12.0), thin);
         }
         Icon::Guide => {
@@ -193,11 +203,19 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
         }
         Icon::Bitmap => {
             p.rect_stroke(Rect::from_min_max(at(2.0, 3.0), at(14.0, 13.0)), 0.0, thin, egui::StrokeKind::Middle);
-            p.add(Shape::convex_polygon(vec![at(3.0, 12.0), at(7.0, 7.0), at(10.0, 10.0), at(13.0, 12.0)], c.gamma_multiply(0.6), Stroke::NONE));
+            p.add(Shape::convex_polygon(
+                vec![at(3.0, 12.0), at(7.0, 7.0), at(10.0, 10.0), at(13.0, 12.0)],
+                c.gamma_multiply(0.6),
+                Stroke::NONE,
+            ));
             p.circle_filled(at(11.0, 6.0), 1.3 * u, c);
         }
         Icon::Sound => {
-            p.add(Shape::convex_polygon(vec![at(2.0, 6.0), at(5.0, 6.0), at(9.0, 3.0), at(9.0, 13.0), at(5.0, 10.0), at(2.0, 10.0)], c, Stroke::NONE));
+            p.add(Shape::convex_polygon(
+                vec![at(2.0, 6.0), at(5.0, 6.0), at(9.0, 3.0), at(9.0, 13.0), at(5.0, 10.0), at(2.0, 10.0)],
+                c,
+                Stroke::NONE,
+            ));
             line(p, at(11.0, 6.0), at(11.5, 10.0), thin);
             line(p, at(13.0, 4.5), at(13.5, 11.5), thin);
         }
@@ -218,10 +236,17 @@ pub fn paint(p: &Painter, r: Rect, icon: Icon, c: Color32) {
 fn tool_icon(p: &Painter, t: Tool, at: &dyn Fn(f32, f32) -> Pos2, c: Color32, s: Stroke, thin: Stroke, u: f32) {
     match t {
         Tool::Select => {
-            p.add(Shape::convex_polygon(vec![at(4.0, 2.0), at(4.0, 13.5), at(7.0, 10.5), at(9.5, 14.5), at(11.0, 13.8), at(8.6, 9.8), at(12.5, 9.8)], c, Stroke::NONE));
+            p.add(Shape::convex_polygon(
+                vec![at(4.0, 2.0), at(4.0, 13.5), at(7.0, 10.5), at(9.5, 14.5), at(11.0, 13.8), at(8.6, 9.8), at(12.5, 9.8)],
+                c,
+                Stroke::NONE,
+            ));
         }
         Tool::Subselect => {
-            p.add(Shape::closed_line(vec![at(4.0, 2.0), at(4.0, 13.5), at(7.0, 10.5), at(9.5, 14.5), at(11.0, 13.8), at(8.6, 9.8), at(12.5, 9.8)], thin));
+            p.add(Shape::closed_line(
+                vec![at(4.0, 2.0), at(4.0, 13.5), at(7.0, 10.5), at(9.5, 14.5), at(11.0, 13.8), at(8.6, 9.8), at(12.5, 9.8)],
+                thin,
+            ));
         }
         Tool::FreeTransform => {
             p.rect_stroke(Rect::from_min_max(at(3.0, 3.0), at(13.0, 13.0)), 0.0, thin, egui::StrokeKind::Middle);
@@ -247,13 +272,21 @@ fn tool_icon(p: &Painter, t: Tool, at: &dyn Fn(f32, f32) -> Pos2, c: Color32, s:
             p.add(Shape::line(vec![at(4.5, 9.0), at(4.0, 12.0), at(6.0, 14.5)], thin));
         }
         Tool::Pen => {
-            p.add(Shape::convex_polygon(vec![at(8.0, 2.0), at(12.5, 9.0), at(9.5, 13.0), at(6.5, 13.0), at(3.5, 9.0)], c.gamma_multiply(0.25), thin));
+            p.add(Shape::convex_polygon(
+                vec![at(8.0, 2.0), at(12.5, 9.0), at(9.5, 13.0), at(6.5, 13.0), at(3.5, 9.0)],
+                c.gamma_multiply(0.25),
+                thin,
+            ));
             line(p, at(8.0, 2.0), at(8.0, 8.5), thin);
             p.circle_filled(at(8.0, 9.0), 1.2 * u, c);
             line(p, at(6.5, 14.5), at(9.5, 14.5), s);
         }
         Tool::Pencil => {
-            p.add(Shape::convex_polygon(vec![at(3.0, 13.0), at(4.0, 10.0), at(12.0, 2.0), at(14.0, 4.0), at(6.0, 12.0)], c.gamma_multiply(0.35), thin));
+            p.add(Shape::convex_polygon(
+                vec![at(3.0, 13.0), at(4.0, 10.0), at(12.0, 2.0), at(14.0, 4.0), at(6.0, 12.0)],
+                c.gamma_multiply(0.35),
+                thin,
+            ));
             line(p, at(3.0, 13.0), at(4.5, 11.5), s);
         }
         Tool::Brush | Tool::ClassicBrush => {

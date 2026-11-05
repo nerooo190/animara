@@ -1,6 +1,6 @@
 use animara_document::{
-    CameraState, ColorEffect, ColorTransform, Document, Element, ElementKind, Fill, Keyframe, Layer, LayerKind, Pose,
-    RotateMode, Shape, ShapePath, Stroke, Timeline, Tween, TweenKind,
+    CameraState, ColorEffect, ColorTransform, Document, Element, ElementKind, Fill, Keyframe, Layer, LayerKind, Pose, RotateMode, Shape,
+    ShapePath, Stroke, Timeline, Tween, TweenKind,
 };
 use animara_geometry::{Affine, Morph, Path, TransformParts, Vec2, lerp};
 use std::f64::consts::{PI, TAU};
@@ -158,11 +158,8 @@ pub(crate) fn interpolate_transform(a: &Element, b: &Element, t: f64, tw: &Tween
     let skew_a = norm_angle(pa.skew_y - pa.skew_x);
     let skew_b = norm_angle(pb.skew_y - pb.skew_x);
     let rot = pa.skew_x + delta * t_rot;
-    let (sx, sy) = if tw.scale {
-        (lerp(pa.scale_x, pb.scale_x, t_scale), lerp(pa.scale_y, pb.scale_y, t_scale))
-    } else {
-        (pa.scale_x, pa.scale_y)
-    };
+    let (sx, sy) =
+        if tw.scale { (lerp(pa.scale_x, pb.scale_x, t_scale), lerp(pa.scale_y, pb.scale_y, t_scale)) } else { (pa.scale_x, pa.scale_y) };
     let parts = TransformParts { x: 0.0, y: 0.0, scale_x: sx, scale_y: sy, skew_x: rot, skew_y: rot + lerp(skew_a, skew_b, t_rot) };
     let pivot = a.pivot.lerp(b.pivot, t);
     let lin = Affine::compose(&parts);
@@ -308,17 +305,17 @@ mod tests {
         let sid = doc.library.add_symbol(sym);
         let layer = &mut doc.scenes[0].timeline.layers[0];
         let el = match kind {
-            TweenKind::Shape => Element::shape(vec![ShapePath::filled(Path::rect(Rect::new(0.0, 0.0, 10.0, 10.0)), Fill::solid(Color::BLACK))]),
+            TweenKind::Shape => {
+                Element::shape(vec![ShapePath::filled(Path::rect(Rect::new(0.0, 0.0, 10.0, 10.0)), Fill::solid(Color::BLACK))])
+            }
             _ => Element::new(ElementKind::Instance(SymbolInstance::new(sid))),
         };
         layer.frames[0].elements.push(el);
         layer.insert_keyframe(10, None);
         match kind {
             TweenKind::Shape => {
-                layer.frames[1].elements[0] = Element::shape(vec![ShapePath::filled(
-                    Path::ellipse(Rect::new(100.0, 0.0, 140.0, 40.0)),
-                    Fill::solid(Color::WHITE),
-                )]);
+                layer.frames[1].elements[0] =
+                    Element::shape(vec![ShapePath::filled(Path::ellipse(Rect::new(100.0, 0.0, 140.0, 40.0)), Fill::solid(Color::WHITE))]);
             }
             _ => {
                 layer.frames[1].elements[0].transform = Affine::translate(100.0, 50.0) * Affine::rotate(PI / 2.0);

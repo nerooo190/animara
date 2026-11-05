@@ -17,11 +17,7 @@ pub enum BoolOp {
 const TOL: f64 = 0.2;
 
 fn to_contours(p: &Path) -> Vec<Vec<[f64; 2]>> {
-    p.flatten(TOL)
-        .into_iter()
-        .filter(|(pts, _)| pts.len() >= 3)
-        .map(|(pts, _)| pts.into_iter().map(|v| [v.x, v.y]).collect())
-        .collect()
+    p.flatten(TOL).into_iter().filter(|(pts, _)| pts.len() >= 3).map(|(pts, _)| pts.into_iter().map(|v| [v.x, v.y]).collect()).collect()
 }
 
 fn fill(rule: FillRule) -> OvFill {

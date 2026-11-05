@@ -69,7 +69,12 @@ fn decode_wav_bytes(bytes: &[u8]) -> Result<Pcm, MediaError> {
 
 /// Encode PCM as 16-bit WAV.
 pub fn encode_wav(pcm: &Pcm) -> Vec<u8> {
-    let spec = hound::WavSpec { channels: pcm.channels.max(1), sample_rate: pcm.sample_rate, bits_per_sample: 16, sample_format: hound::SampleFormat::Int };
+    let spec = hound::WavSpec {
+        channels: pcm.channels.max(1),
+        sample_rate: pcm.sample_rate,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
     let mut cur = Cursor::new(Vec::new());
     {
         let mut w = hound::WavWriter::new(&mut cur, spec).expect("valid wav spec");
@@ -153,7 +158,19 @@ pub fn peaks_per_centisecond(pcm: &Pcm) -> Vec<f32> {
     peaks(pcm, (pcm.duration() * 100.0).ceil() as usize)
 }
 
-fn resample_into(src: &Pcm, rate: u32, out: &mut [f32], start_frame: i64, gain: f32, trim_start: f64, max_len: Option<f64>, loops: u32, fade_in: f64, fade_out: f64) {
+#[allow(clippy::too_many_arguments)]
+fn resample_into(
+    src: &Pcm,
+    rate: u32,
+    out: &mut [f32],
+    start_frame: i64,
+    gain: f32,
+    trim_start: f64,
+    max_len: Option<f64>,
+    loops: u32,
+    fade_in: f64,
+    fade_out: f64,
+) {
     let step = src.sample_rate as f64 / rate as f64;
     let src_frames = src.frames() as f64;
     let trim0 = (trim_start * src.sample_rate as f64).max(0.0);
@@ -212,10 +229,10 @@ pub fn mixdown_timeline(doc: &Document, tl: &Timeline, first: u32, last: u32, ra
                 continue;
             }
             let Some(asset) = doc.library.sound(s.asset) else { continue };
-            if !cache.contains_key(&s.asset) {
+            if let std::collections::hash_map::Entry::Vacant(e) = cache.entry(s.asset) {
                 match decode_sound(asset) {
                     Ok(p) => {
-                        cache.insert(s.asset, p);
+                        e.insert(p);
                     }
                     Err(_) => continue,
                 }

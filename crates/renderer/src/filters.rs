@@ -60,7 +60,7 @@ fn blur_lines(src: &[u8], dst: &mut [u8], w: usize, h: usize, r: usize, horizont
 fn alpha_tinted(src: &Pixmap, color: Color, strength: f32, invert: bool) -> Vec<u8> {
     let [r, g, b, a] = color.to_rgba8();
     let mut out = vec![0u8; src.data().len()];
-    for (i, px) in src.data().chunks_exact(4).enumerate() {
+    for (i, px) in src.data().as_chunks::<4>().0.iter().enumerate() {
         let mut al = px[3] as f32 / 255.0;
         if invert {
             al = 1.0 - al;
@@ -104,7 +104,18 @@ fn over(src: &[u8], dst: &[u8]) -> [u8; 4] {
     o
 }
 
-fn shadow_like(pm: &mut Pixmap, color: Color, strength: f32, blur: (f64, f64), passes: u32, offset: (i32, i32), inner: bool, knockout: bool, hide: bool) {
+#[allow(clippy::too_many_arguments)]
+fn shadow_like(
+    pm: &mut Pixmap,
+    color: Color,
+    strength: f32,
+    blur: (f64, f64),
+    passes: u32,
+    offset: (i32, i32),
+    inner: bool,
+    knockout: bool,
+    hide: bool,
+) {
     let (w, h) = (pm.width() as usize, pm.height() as usize);
     let mut sh = alpha_tinted(pm, color, strength, inner);
     sh = shift(&sh, w, h, offset.0, offset.1);
@@ -194,7 +205,7 @@ pub fn apply(pm: &mut Pixmap, f: &Filter, scale: f64) {
 /// Invert blend: inverts the destination where the source has coverage.
 pub fn composite_invert(dst: &mut Pixmap, src: &Pixmap) {
     let s = src.data().to_vec();
-    for (i, d) in dst.data_mut().chunks_exact_mut(4).enumerate() {
+    for (i, d) in dst.data_mut().as_chunks_mut::<4>().0.iter_mut().enumerate() {
         let a = s[i * 4 + 3] as u32;
         if a == 0 {
             continue;
@@ -209,7 +220,7 @@ pub fn composite_invert(dst: &mut Pixmap, src: &Pixmap) {
 /// Subtract blend: destination minus source color.
 pub fn composite_subtract(dst: &mut Pixmap, src: &Pixmap) {
     let s = src.data().to_vec();
-    for (i, d) in dst.data_mut().chunks_exact_mut(4).enumerate() {
+    for (i, d) in dst.data_mut().as_chunks_mut::<4>().0.iter_mut().enumerate() {
         for c in 0..3 {
             d[c] = d[c].saturating_sub(s[i * 4 + c]);
         }
@@ -245,18 +256,22 @@ mod tests {
                 pm.data_mut()[i..i + 4].copy_from_slice(&[255, 0, 0, 255]);
             }
         }
-        apply(&mut pm, &Filter::DropShadow {
-            blur_x: 0.0,
-            blur_y: 0.0,
-            strength: 1.0,
-            quality: 1,
-            angle: 0.0,
-            distance: 10.0,
-            color: Color::BLACK,
-            knockout: false,
-            inner: false,
-            hide_object: false,
-        }, 1.0);
+        apply(
+            &mut pm,
+            &Filter::DropShadow {
+                blur_x: 0.0,
+                blur_y: 0.0,
+                strength: 1.0,
+                quality: 1,
+                angle: 0.0,
+                distance: 10.0,
+                color: Color::BLACK,
+                knockout: false,
+                inner: false,
+                hide_object: false,
+            },
+            1.0,
+        );
         let i = (15 * 40 + 25) * 4;
         assert_eq!(&pm.data()[i..i + 4], &[0, 0, 0, 255]);
         let j = (15 * 40 + 15) * 4;

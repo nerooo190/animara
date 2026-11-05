@@ -204,7 +204,9 @@ pub fn build_default_asset(doc: &mut Document, name: &str) -> Id {
         }
         "Pulsing Star" => {
             let l = &mut sym.timeline.layers[0];
-            let star = |r: f64, c: Color| Element::shape(vec![ShapePath::filled(Path::star(Vec2::ZERO, r, 5, 0.45, -std::f64::consts::FRAC_PI_2), Fill::solid(c))]);
+            let star = |r: f64, c: Color| {
+                Element::shape(vec![ShapePath::filled(Path::star(Vec2::ZERO, r, 5, 0.45, -std::f64::consts::FRAC_PI_2), Fill::solid(c))])
+            };
             l.frames = vec![Keyframe::new(0, 15), Keyframe::new(15, 15), Keyframe::new(30, 1)];
             l.frames[0].elements.push(star(30.0, Color::from_rgba8(0xf1, 0xc4, 0x0f, 255)));
             l.frames[1].elements.push(star(45.0, Color::from_rgba8(0xe6, 0x7e, 0x22, 255)));
@@ -214,7 +216,9 @@ pub fn build_default_asset(doc: &mut Document, name: &str) -> Id {
         }
         _ => {
             // Two-bone arm on an armature layer with a waving pose cycle.
-            let seg = |len: f64, c: Color| Element::shape(vec![ShapePath::filled(Path::rounded_rect(Rect::new(0.0, -6.0, len, 6.0), 6.0), Fill::solid(c))]);
+            let seg = |len: f64, c: Color| {
+                Element::shape(vec![ShapePath::filled(Path::rounded_rect(Rect::new(0.0, -6.0, len, 6.0), 6.0), Fill::solid(c))])
+            };
             let upper = seg(60.0, Color::from_rgba8(0x34, 0x98, 0xdb, 255));
             let lower = seg(50.0, Color::from_rgba8(0x5d, 0xad, 0xe2, 255)).with_transform(Affine::translate(60.0, 0.0));
             let (uid, lid) = (upper.id, lower.id);
@@ -230,7 +234,10 @@ pub fn build_default_asset(doc: &mut Document, name: &str) -> Id {
             for (i, k) in l.frames.iter_mut().enumerate() {
                 k.elements = vec![upper.clone(), lower.clone()];
                 let up = i % 2 == 1;
-                k.pose = Some(animara_document::Pose { angles: vec![if up { -1.2 } else { -0.4 }, if up { -0.9 } else { 0.3 }], root_offset: Vec2::ZERO });
+                k.pose = Some(animara_document::Pose {
+                    angles: vec![if up { -1.2 } else { -0.4 }, if up { -0.9 } else { 0.3 }],
+                    root_offset: Vec2::ZERO,
+                });
             }
             l.armature = Some(arm);
         }

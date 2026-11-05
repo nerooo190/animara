@@ -646,10 +646,7 @@ impl Timeline {
         id
     }
     pub fn unique_layer_name(&self, base: &str) -> String {
-        (1..)
-            .map(|i| format!("{base} {i}"))
-            .find(|n| !self.layers.iter().any(|l| &l.name == n))
-            .expect("infinite iterator")
+        (1..).map(|i| format!("{base} {i}")).find(|n| !self.layers.iter().any(|l| &l.name == n)).expect("infinite iterator")
     }
     /// Remove a layer; folder children move to the folder's parent, references are cleared.
     pub fn remove_layer(&mut self, id: Id) -> Option<Layer> {
@@ -759,10 +756,9 @@ mod tests {
 
     fn layer_with_content() -> Layer {
         let mut l = Layer::new("L");
-        l.frames[0].elements.push(Element::shape(vec![ShapePath::filled(
-            Path::rect(Rect::new(0.0, 0.0, 10.0, 10.0)),
-            crate::Fill::solid(Color::BLACK),
-        )]));
+        l.frames[0]
+            .elements
+            .push(Element::shape(vec![ShapePath::filled(Path::rect(Rect::new(0.0, 0.0, 10.0, 10.0)), crate::Fill::solid(Color::BLACK))]));
         l
     }
 

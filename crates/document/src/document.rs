@@ -85,7 +85,14 @@ fn q() -> u8 {
 
 impl Default for PublishSettings {
     fn default() -> Self {
-        PublishSettings { output_name: "untitled".into(), loop_playback: true, transparent: false, scale: 1.0, quality: 90, include_audio: true }
+        PublishSettings {
+            output_name: "untitled".into(),
+            loop_playback: true,
+            transparent: false,
+            scale: 1.0,
+            quality: 90,
+            include_audio: true,
+        }
     }
 }
 

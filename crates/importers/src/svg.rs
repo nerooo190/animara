@@ -3,8 +3,7 @@
 
 use crate::{ImportError, import_image_bytes};
 use animara_document::{
-    BitmapAsset, BitmapInstance, Color, Element, ElementKind, Fill, GradientStop, LineCap, LineJoin, ShapePath, SpreadMode,
-    Stroke,
+    BitmapAsset, BitmapInstance, Color, Element, ElementKind, Fill, GradientStop, LineCap, LineJoin, ShapePath, SpreadMode, Stroke,
 };
 use animara_geometry::{Affine, FillRule, Path, Vec2};
 use std::sync::{Arc, OnceLock};
@@ -140,7 +139,9 @@ fn walk(g: &usvg::Group, parent_opacity: f32, out: &mut SvgImport) {
             }
             usvg::Node::Image(img) => {
                 let data = match img.kind() {
-                    usvg::ImageKind::PNG(d) | usvg::ImageKind::JPEG(d) | usvg::ImageKind::GIF(d) | usvg::ImageKind::WEBP(d) => Some(d.clone()),
+                    usvg::ImageKind::PNG(d) | usvg::ImageKind::JPEG(d) | usvg::ImageKind::GIF(d) | usvg::ImageKind::WEBP(d) => {
+                        Some(d.clone())
+                    }
                     usvg::ImageKind::SVG(_) => {
                         out.warnings.push("nested SVG image was ignored".into());
                         None
@@ -178,7 +179,13 @@ fn options() -> &'static usvg::Options<'static> {
 pub fn import_svg_data(data: &[u8]) -> Result<SvgImport, ImportError> {
     let tree = usvg::Tree::from_data(data, options()).map_err(|e| ImportError::Svg(e.to_string()))?;
     let size = tree.size();
-    let mut out = SvgImport { elements: Vec::new(), bitmaps: Vec::new(), width: size.width() as f64, height: size.height() as f64, warnings: Vec::new() };
+    let mut out = SvgImport {
+        elements: Vec::new(),
+        bitmaps: Vec::new(),
+        width: size.width() as f64,
+        height: size.height() as f64,
+        warnings: Vec::new(),
+    };
     walk(tree.root(), 1.0, &mut out);
     out.warnings.dedup();
     Ok(out)

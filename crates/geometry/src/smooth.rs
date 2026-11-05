@@ -60,13 +60,8 @@ pub fn fit_smooth_path(points: &[Vec2], tolerance: f64) -> Path {
         return Path::line(s[0], s[1]);
     }
     let n = s.len();
-    let get = |i: isize| -> Vec2 {
-        if closed {
-            s[(i.rem_euclid(n as isize - 1)) as usize]
-        } else {
-            s[i.clamp(0, n as isize - 1) as usize]
-        }
-    };
+    let get =
+        |i: isize| -> Vec2 { if closed { s[(i.rem_euclid(n as isize - 1)) as usize] } else { s[i.clamp(0, n as isize - 1) as usize] } };
     let mut path = Path::new();
     path.move_to(s[0]);
     for i in 0..n - 1 {

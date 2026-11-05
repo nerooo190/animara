@@ -239,9 +239,8 @@ impl Path {
     /// Regular polygon with `sides` vertices inscribed in a circle.
     pub fn polygon(center: Vec2, radius: f64, sides: u32, rotation: f64) -> Path {
         let n = sides.max(3);
-        let pts: Vec<Vec2> = (0..n)
-            .map(|i| center + Vec2::from_angle(rotation + i as f64 * std::f64::consts::TAU / n as f64) * radius)
-            .collect();
+        let pts: Vec<Vec2> =
+            (0..n).map(|i| center + Vec2::from_angle(rotation + i as f64 * std::f64::consts::TAU / n as f64) * radius).collect();
         Path::polyline(&pts, true)
     }
     /// Star with `points` tips; `inner_ratio` is inner radius / outer radius.
@@ -766,10 +765,7 @@ impl SvgTokens<'_> {
                 break;
             }
         }
-        std::str::from_utf8(&s[start..self.i])
-            .ok()
-            .and_then(|t| t.parse::<f64>().ok())
-            .ok_or_else(|| format!("expected number at {start}"))
+        std::str::from_utf8(&s[start..self.i]).ok().and_then(|t| t.parse::<f64>().ok()).ok_or_else(|| format!("expected number at {start}"))
     }
 }
 
@@ -879,12 +875,7 @@ fn cubic_len(c: &[Vec2; 4]) -> f64 {
 
 fn subdivide_to(c: &mut CubicContour, n: usize) {
     while c.segs.len() < n {
-        let (idx, _) = c
-            .segs
-            .iter()
-            .enumerate()
-            .max_by(|a, b| cubic_len(a.1).total_cmp(&cubic_len(b.1)))
-            .expect("non-empty contour");
+        let (idx, _) = c.segs.iter().enumerate().max_by(|a, b| cubic_len(a.1).total_cmp(&cubic_len(b.1))).expect("non-empty contour");
         let (a, b) = split_cubic(c.segs[idx]);
         c.segs[idx] = a;
         c.segs.insert(idx + 1, b);

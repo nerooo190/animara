@@ -61,14 +61,29 @@ impl W<'_> {
                 let mut st = String::new();
                 for s in stops {
                     let c = ct.apply(s.color);
-                    let _ = write!(st, "<stop offset=\"{}\" stop-color=\"{}\" stop-opacity=\"{}\"/>", fmt(s.offset as f64), rgb(c), fmt(c.a as f64));
+                    let _ = write!(
+                        st,
+                        "<stop offset=\"{}\" stop-color=\"{}\" stop-opacity=\"{}\"/>",
+                        fmt(s.offset as f64),
+                        rgb(c),
+                        fmt(c.a as f64)
+                    );
                 }
                 match f {
                     Fill::Linear { .. } => {
-                        let _ = write!(self.defs, "<linearGradient id=\"{id}\" gradientUnits=\"userSpaceOnUse\" x1=\"-1\" y1=\"0\" x2=\"1\" y2=\"0\" spreadMethod=\"{sm}\" gradientTransform=\"{}\">{st}</linearGradient>", mat(matrix));
+                        let _ = write!(
+                            self.defs,
+                            "<linearGradient id=\"{id}\" gradientUnits=\"userSpaceOnUse\" x1=\"-1\" y1=\"0\" x2=\"1\" y2=\"0\" spreadMethod=\"{sm}\" gradientTransform=\"{}\">{st}</linearGradient>",
+                            mat(matrix)
+                        );
                     }
                     Fill::Radial { focal, .. } => {
-                        let _ = write!(self.defs, "<radialGradient id=\"{id}\" gradientUnits=\"userSpaceOnUse\" cx=\"0\" cy=\"0\" r=\"1\" fx=\"{}\" fy=\"0\" spreadMethod=\"{sm}\" gradientTransform=\"{}\">{st}</radialGradient>", fmt(*focal), mat(matrix));
+                        let _ = write!(
+                            self.defs,
+                            "<radialGradient id=\"{id}\" gradientUnits=\"userSpaceOnUse\" cx=\"0\" cy=\"0\" r=\"1\" fx=\"{}\" fy=\"0\" spreadMethod=\"{sm}\" gradientTransform=\"{}\">{st}</radialGradient>",
+                            fmt(*focal),
+                            mat(matrix)
+                        );
                     }
                     _ => unreachable!(),
                 }
@@ -79,7 +94,15 @@ impl W<'_> {
                     let id = self.id("p");
                     let data = base64::engine::general_purpose::STANDARD.encode(b.data.as_slice());
                     let mime = if b.format == "jpg" { "jpeg" } else { b.format.as_str() };
-                    let _ = write!(self.defs, "<pattern id=\"{id}\" patternUnits=\"userSpaceOnUse\" width=\"{}\" height=\"{}\" patternTransform=\"{}\"><image width=\"{}\" height=\"{}\" xlink:href=\"data:image/{mime};base64,{data}\"/></pattern>", b.width, b.height, mat(matrix), b.width, b.height);
+                    let _ = write!(
+                        self.defs,
+                        "<pattern id=\"{id}\" patternUnits=\"userSpaceOnUse\" width=\"{}\" height=\"{}\" patternTransform=\"{}\"><image width=\"{}\" height=\"{}\" xlink:href=\"data:image/{mime};base64,{data}\"/></pattern>",
+                        b.width,
+                        b.height,
+                        mat(matrix),
+                        b.width,
+                        b.height
+                    );
                     (format!("url(#{id})"), 1.0)
                 }
                 None => ("#808080".into(), 1.0),
@@ -154,13 +177,19 @@ impl W<'_> {
             return None;
         }
         let id = self.id("f");
-        let mut f = format!("<filter id=\"{id}\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\" color-interpolation-filters=\"sRGB\">");
+        let mut f =
+            format!("<filter id=\"{id}\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\" color-interpolation-filters=\"sRGB\">");
         let mut input = "SourceGraphic".to_string();
         for (i, flt) in filters.iter().enumerate() {
             let out = format!("r{i}");
             match *flt {
                 Filter::Blur { blur_x, blur_y, .. } => {
-                    let _ = write!(f, "<feGaussianBlur in=\"{input}\" stdDeviation=\"{} {}\" result=\"{out}\"/>", fmt(blur_x * scale / 2.0), fmt(blur_y * scale / 2.0));
+                    let _ = write!(
+                        f,
+                        "<feGaussianBlur in=\"{input}\" stdDeviation=\"{} {}\" result=\"{out}\"/>",
+                        fmt(blur_x * scale / 2.0),
+                        fmt(blur_y * scale / 2.0)
+                    );
                 }
                 Filter::DropShadow { blur_x, blur_y, angle, distance, color, strength, .. } => {
                     let a = angle.to_radians();
@@ -212,7 +241,13 @@ impl W<'_> {
                     for (p, c) in layout.to_paths() {
                         let c = color.apply(c);
                         let fill = if mask_white { "#ffffff".to_string() } else { rgb(c) };
-                        let _ = write!(self.body, "<path transform=\"{}\" d=\"{}\" fill=\"{fill}\" fill-opacity=\"{}\"/>", mat(transform), p.to_svg(), fmt(if mask_white { 1.0 } else { c.a as f64 }));
+                        let _ = write!(
+                            self.body,
+                            "<path transform=\"{}\" d=\"{}\" fill=\"{fill}\" fill-opacity=\"{}\"/>",
+                            mat(transform),
+                            p.to_svg(),
+                            fmt(if mask_white { 1.0 } else { c.a as f64 })
+                        );
                     }
                 }
                 DisplayItem::Bitmap { bitmap, transform, color, .. } => {
@@ -223,10 +258,20 @@ impl W<'_> {
                         if !color.is_identity() {
                             let id = self.id("c");
                             let (m, a) = (color.mul, color.add);
-                            let _ = write!(self.defs, "<filter id=\"{id}\"><feColorMatrix type=\"matrix\" values=\"{} 0 0 0 {} 0 {} 0 0 {} 0 0 {} 0 {} 0 0 0 {} {}\"/></filter>", m[0], a[0], m[1], a[1], m[2], a[2], m[3], a[3]);
+                            let _ = write!(
+                                self.defs,
+                                "<filter id=\"{id}\"><feColorMatrix type=\"matrix\" values=\"{} 0 0 0 {} 0 {} 0 0 {} 0 0 {} 0 {} 0 0 0 {} {}\"/></filter>",
+                                m[0], a[0], m[1], a[1], m[2], a[2], m[3], a[3]
+                            );
                             extra = format!(" filter=\"url(#{id})\"");
                         }
-                        let _ = write!(self.body, "<image transform=\"{}\" width=\"{}\" height=\"{}\" xlink:href=\"data:image/{mime};base64,{data}\"{extra}/>", mat(transform), b.width, b.height);
+                        let _ = write!(
+                            self.body,
+                            "<image transform=\"{}\" width=\"{}\" height=\"{}\" xlink:href=\"data:image/{mime};base64,{data}\"{extra}/>",
+                            mat(transform),
+                            b.width,
+                            b.height
+                        );
                     }
                 }
                 DisplayItem::Group { items, filters, blend, scale, .. } => {

@@ -258,7 +258,16 @@ pub fn export_video(doc: &Document, path: &Path, format: VideoFormat, opts: &Exp
             }
         }
         VideoFormat::WebP => {
-            cmd.args(["-c:v", "libwebp_anim", "-lossless", if opts.quality >= 100 { "1" } else { "0" }, "-q:v", &opts.quality.to_string(), "-loop", &opts.loop_count.to_string()]);
+            cmd.args([
+                "-c:v",
+                "libwebp_anim",
+                "-lossless",
+                if opts.quality >= 100 { "1" } else { "0" },
+                "-q:v",
+                &opts.quality.to_string(),
+                "-loop",
+                &opts.loop_count.to_string(),
+            ]);
             if alpha {
                 cmd.args(["-pix_fmt", "yuva420p"]);
             }
@@ -297,7 +306,12 @@ pub fn export_audio_wav(doc: &Document, path: &Path) -> Result<(), ExportError> 
 }
 
 /// Convert a cubic Bézier to quadratic segments (for formats that only support quadratics).
-pub(crate) fn cubic_to_quads(p0: animara_geometry::Vec2, c1: animara_geometry::Vec2, c2: animara_geometry::Vec2, p3: animara_geometry::Vec2) -> Vec<(animara_geometry::Vec2, animara_geometry::Vec2)> {
+pub(crate) fn cubic_to_quads(
+    p0: animara_geometry::Vec2,
+    c1: animara_geometry::Vec2,
+    c2: animara_geometry::Vec2,
+    p3: animara_geometry::Vec2,
+) -> Vec<(animara_geometry::Vec2, animara_geometry::Vec2)> {
     use animara_geometry::Segment;
     let len = p0.distance(c1) + c1.distance(c2) + c2.distance(p3);
     let n = ((len / 20.0).ceil() as usize).clamp(1, 16);
@@ -329,7 +343,10 @@ pub(crate) mod test_doc {
         sym.timeline.layers[0].frames[0].elements.push(Element::shape(vec![ShapePath {
             path: Path::rect(Rect::new(-10.0, -10.0, 10.0, 10.0)),
             fill: Some(Fill::Linear {
-                stops: vec![GradientStop { offset: 0.0, color: Color::rgb(1.0, 0.0, 0.0) }, GradientStop { offset: 1.0, color: Color::rgb(0.0, 0.0, 1.0) }],
+                stops: vec![
+                    GradientStop { offset: 0.0, color: Color::rgb(1.0, 0.0, 0.0) },
+                    GradientStop { offset: 1.0, color: Color::rgb(0.0, 0.0, 1.0) },
+                ],
                 matrix: Affine::scale(10.0, 10.0),
                 spread: SpreadMode::Pad,
             }),
@@ -347,7 +364,9 @@ pub(crate) mod test_doc {
         l.frames[0].script = "stop();".into();
         let tid = doc.scenes[0].timeline.add_layer("Text", 0);
         let t = doc.scenes[0].timeline.layer_mut(tid).unwrap();
-        t.frames[0].elements.push(Element::new(ElementKind::Text(TextElement::new("Hi", TextStyle::default()))).with_transform(Affine::translate(5.0, 5.0)));
+        t.frames[0].elements.push(
+            Element::new(ElementKind::Text(TextElement::new("Hi", TextStyle::default()))).with_transform(Affine::translate(5.0, 5.0)),
+        );
         doc
     }
 }

@@ -96,11 +96,7 @@ impl Serialize for Color {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         // Full precision is kept when the color is not representable in 8 bits.
         let [r, g, b, a] = self.to_rgba8();
-        if Color::from_rgba8(r, g, b, a) == *self {
-            s.serialize_str(&self.to_hex())
-        } else {
-            [self.r, self.g, self.b, self.a].serialize(s)
-        }
+        if Color::from_rgba8(r, g, b, a) == *self { s.serialize_str(&self.to_hex()) } else { [self.r, self.g, self.b, self.a].serialize(s) }
     }
 }
 
@@ -141,10 +137,31 @@ pub enum SpreadMode {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Fill {
-    Solid { color: Color },
-    Linear { stops: Vec<GradientStop>, matrix: Affine, #[serde(default)] spread: SpreadMode },
-    Radial { stops: Vec<GradientStop>, matrix: Affine, #[serde(default)] spread: SpreadMode, #[serde(default)] focal: f64 },
-    Bitmap { asset: crate::Id, matrix: Affine, #[serde(default = "yes")] smooth: bool, #[serde(default = "yes")] repeat: bool },
+    Solid {
+        color: Color,
+    },
+    Linear {
+        stops: Vec<GradientStop>,
+        matrix: Affine,
+        #[serde(default)]
+        spread: SpreadMode,
+    },
+    Radial {
+        stops: Vec<GradientStop>,
+        matrix: Affine,
+        #[serde(default)]
+        spread: SpreadMode,
+        #[serde(default)]
+        focal: f64,
+    },
+    Bitmap {
+        asset: crate::Id,
+        matrix: Affine,
+        #[serde(default = "yes")]
+        smooth: bool,
+        #[serde(default = "yes")]
+        repeat: bool,
+    },
 }
 
 fn yes() -> bool {
@@ -265,8 +282,13 @@ pub enum LineJoin {
 pub enum StrokeStyle {
     #[default]
     Solid,
-    Dashed { dash: f64, gap: f64 },
-    Dotted { spacing: f64 },
+    Dashed {
+        dash: f64,
+        gap: f64,
+    },
+    Dotted {
+        spacing: f64,
+    },
     Hairline,
 }
 
@@ -362,12 +384,21 @@ pub enum ColorEffect {
     #[default]
     None,
     /// -1..=1
-    Brightness { amount: f32 },
+    Brightness {
+        amount: f32,
+    },
     /// amount 0..=1
-    Tint { color: Color, amount: f32 },
+    Tint {
+        color: Color,
+        amount: f32,
+    },
     /// 0..=1
-    Alpha { alpha: f32 },
-    Advanced { transform: ColorTransform },
+    Alpha {
+        alpha: f32,
+    },
+    Advanced {
+        transform: ColorTransform,
+    },
 }
 
 impl ColorEffect {

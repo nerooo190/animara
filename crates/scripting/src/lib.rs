@@ -50,9 +50,36 @@ pub enum ScriptCmd {
 
 /// Names exposed to scripts (used for syntax highlighting and docs).
 pub const API_FUNCTIONS: &[&str] = &[
-    "stop", "play", "gotoAndPlay", "gotoAndStop", "nextFrame", "prevFrame", "nextScene", "prevScene", "trace", "clip", "root",
-    "on_click", "on_enter_frame", "on_key", "currentFrame", "totalFrames", "mouseX", "mouseY", "random", "stopAllSounds",
-    "navigateToURL", "set_x", "set_y", "set_alpha", "set_rotation", "set_scale", "set_visible", "set_text", "x", "y",
+    "stop",
+    "play",
+    "gotoAndPlay",
+    "gotoAndStop",
+    "nextFrame",
+    "prevFrame",
+    "nextScene",
+    "prevScene",
+    "trace",
+    "clip",
+    "root",
+    "on_click",
+    "on_enter_frame",
+    "on_key",
+    "currentFrame",
+    "totalFrames",
+    "mouseX",
+    "mouseY",
+    "random",
+    "stopAllSounds",
+    "navigateToURL",
+    "set_x",
+    "set_y",
+    "set_alpha",
+    "set_rotation",
+    "set_scale",
+    "set_visible",
+    "set_text",
+    "x",
+    "y",
 ];
 
 /// Snippets offered in the Actions panel.
@@ -64,7 +91,10 @@ pub const SNIPPETS: &[(&str, &str)] = &[
     ("Play a movie clip", "clip(\"movieClip_1\").play();\n"),
     ("Stop a movie clip", "clip(\"movieClip_1\").stop();\n"),
     ("Show / hide object on click", "on_click(\"button_1\", || {\n    clip(\"movieClip_1\").set_visible(false);\n});\n"),
-    ("Move object every frame", "on_enter_frame(\"movieClip_1\", || {\n    let c = clip(\"movieClip_1\");\n    c.set_x(c.x() + 5.0);\n});\n"),
+    (
+        "Move object every frame",
+        "on_enter_frame(\"movieClip_1\", || {\n    let c = clip(\"movieClip_1\");\n    c.set_x(c.x() + 5.0);\n});\n",
+    ),
     ("Keyboard: arrow right next frame", "on_key(\"ArrowRight\", || {\n    nextFrame();\n});\n"),
     ("Set dynamic text", "clip(\"label_txt\").set_text(\"Hello\");\n"),
     ("Trace current frame", "trace(\"frame \" + currentFrame());\n"),
@@ -186,9 +216,11 @@ impl ScriptHost {
         let s = shared.clone();
         engine.register_fn("play", move || push!(s, ScriptCmd::Play(this(&s))));
         let s = shared.clone();
-        engine.register_fn("gotoAndPlay", move |f: Dynamic| push!(s, ScriptCmd::Goto { target: this(&s), frame: frame_ref(f), play: true }));
+        engine
+            .register_fn("gotoAndPlay", move |f: Dynamic| push!(s, ScriptCmd::Goto { target: this(&s), frame: frame_ref(f), play: true }));
         let s = shared.clone();
-        engine.register_fn("gotoAndStop", move |f: Dynamic| push!(s, ScriptCmd::Goto { target: this(&s), frame: frame_ref(f), play: false }));
+        engine
+            .register_fn("gotoAndStop", move |f: Dynamic| push!(s, ScriptCmd::Goto { target: this(&s), frame: frame_ref(f), play: false }));
         let s = shared.clone();
         engine.register_fn("nextFrame", move || push!(s, ScriptCmd::NextFrame(this(&s))));
         let s = shared.clone();
@@ -246,9 +278,13 @@ impl ScriptHost {
         let s = shared.clone();
         engine.register_fn("play", move |c: &mut Clip| push!(s, ScriptCmd::Play(c.target.clone())));
         let s = shared.clone();
-        engine.register_fn("gotoAndPlay", move |c: &mut Clip, f: Dynamic| push!(s, ScriptCmd::Goto { target: c.target.clone(), frame: frame_ref(f), play: true }));
+        engine.register_fn("gotoAndPlay", move |c: &mut Clip, f: Dynamic| {
+            push!(s, ScriptCmd::Goto { target: c.target.clone(), frame: frame_ref(f), play: true })
+        });
         let s = shared.clone();
-        engine.register_fn("gotoAndStop", move |c: &mut Clip, f: Dynamic| push!(s, ScriptCmd::Goto { target: c.target.clone(), frame: frame_ref(f), play: false }));
+        engine.register_fn("gotoAndStop", move |c: &mut Clip, f: Dynamic| {
+            push!(s, ScriptCmd::Goto { target: c.target.clone(), frame: frame_ref(f), play: false })
+        });
         let s = shared.clone();
         engine.register_fn("nextFrame", move |c: &mut Clip| push!(s, ScriptCmd::NextFrame(c.target.clone())));
         let s = shared.clone();
@@ -256,14 +292,18 @@ impl ScriptHost {
         for prop in ["x", "y", "alpha", "rotation", "scale", "scale_x", "scale_y"] {
             let s = shared.clone();
             let p = prop.to_string();
-            engine.register_fn(format!("set_{prop}"), move |c: &mut Clip, v: f64| push!(s, ScriptCmd::SetProp { target: c.target.clone(), prop: p.clone(), value: v }));
+            engine.register_fn(format!("set_{prop}"), move |c: &mut Clip, v: f64| {
+                push!(s, ScriptCmd::SetProp { target: c.target.clone(), prop: p.clone(), value: v })
+            });
         }
         let s = shared.clone();
         engine.register_fn("set_visible", move |c: &mut Clip, v: bool| {
             push!(s, ScriptCmd::SetProp { target: c.target.clone(), prop: "visible".into(), value: if v { 1.0 } else { 0.0 } })
         });
         let s = shared.clone();
-        engine.register_fn("set_text", move |c: &mut Clip, t: Dynamic| push!(s, ScriptCmd::SetText { target: c.target.clone(), text: t.to_string() }));
+        engine.register_fn("set_text", move |c: &mut Clip, t: Dynamic| {
+            push!(s, ScriptCmd::SetText { target: c.target.clone(), text: t.to_string() })
+        });
         let s = shared.clone();
         engine.register_fn("x", move |c: &mut Clip| match &c.target {
             Target::Named(n) => lock(&s).info.positions.get(n).map(|p| p.0).unwrap_or(0.0),
@@ -315,7 +355,8 @@ impl ScriptHost {
 
     /// Fire an event (`click`, `enter_frame`, `key`, `mouse_over`, `mouse_out`) for a target name.
     pub fn fire(&mut self, event: &str, target: &str) -> Result<Vec<ScriptCmd>, String> {
-        let handlers: Vec<Handler> = lock(&self.shared).handlers.iter().filter(|h| h.event == event && h.target == target).cloned().collect();
+        let handlers: Vec<Handler> =
+            lock(&self.shared).handlers.iter().filter(|h| h.event == event && h.target == target).cloned().collect();
         let mut err = None;
         for h in handlers {
             lock(&self.shared).this = Some(Target::Root);
