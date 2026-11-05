@@ -1,0 +1,3 @@
+<DOMSymbolItem xmlns="http://ns.adobe.com/xfl/2008/" name="Shapes/Ball" symbolType="graphic"><timeline><DOMTimeline name="Ball"><layers><DOMLayer name="Layer 1"><frames><DOMFrame index="0"><elements>
+  <DOMOvalObject x="-20" y="-20" objectWidth="40" objectHeight="40"><fill><SolidColor color="#E74C3C"/></fill><stroke><SolidStroke weight="2"><fill><SolidColor color="#000000"/></fill></SolidStroke></stroke></DOMOvalObject>
+</elements></DOMFrame></frames></DOMLayer></layers></DOMTimeline></timeline></DOMSymbolItem>

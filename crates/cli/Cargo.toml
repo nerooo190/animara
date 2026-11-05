@@ -11,8 +11,13 @@ path = "src/main.rs"
 
 [dependencies]
 animara-document.workspace = true
+animara-geometry.workspace = true
 animara-animation.workspace = true
 animara-renderer.workspace = true
 animara-importers.workspace = true
 animara-exporters.workspace = true
 animara-scripting.workspace = true
+
+[dev-dependencies]
+image.workspace = true
+serde_json.workspace = true

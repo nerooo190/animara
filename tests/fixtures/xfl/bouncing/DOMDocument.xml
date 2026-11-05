@@ -1,0 +1,33 @@
+<DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" width="640" height="360" frameRate="12" backgroundColor="#336699">
+  <folders><DOMFolderItem name="Shapes" isExpanded="true"/></folders>
+  <symbols><Include href="Shapes/Ball.xml"/></symbols>
+  <timelines>
+    <DOMTimeline name="Scene 1">
+      <layers>
+        <DOMLayer name="Guide" layerType="guide" color="#FF0000">
+          <frames><DOMFrame index="0" duration="12"><elements>
+            <DOMShape><strokes><StrokeStyle index="1"><SolidStroke weight="1"><fill><SolidColor color="#000000"/></fill></SolidStroke></StrokeStyle></strokes>
+            <edges><Edge strokeStyle="1" edges="!800 5000[4000 -2000 12000 5000"/></edges></DOMShape>
+          </elements></DOMFrame></frames>
+        </DOMLayer>
+        <DOMLayer name="Ball" parentLayerIndex="0" color="#00FF00">
+          <frames>
+            <DOMFrame index="0" duration="11" tweenType="motion" acceleration="-50" name="start"><Actionscript><script><![CDATA[trace("start");]]></script></Actionscript><elements>
+              <DOMSymbolInstance libraryItemName="Shapes/Ball" name="ball_mc" symbolType="graphic" loop="loop"><matrix><Matrix tx="40" ty="250"/></matrix><color><Color alphaMultiplier="0.8"/></color><filters><DropShadowFilter blurX="4" blurY="4" distance="3" angle="45" color="#000000" alpha="0.5"/></filters></DOMSymbolInstance>
+            </elements></DOMFrame>
+            <DOMFrame index="11"><elements>
+              <DOMSymbolInstance libraryItemName="Shapes/Ball" symbolType="graphic"><matrix><Matrix tx="600" ty="250"/></matrix></DOMSymbolInstance>
+            </elements></DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Ground">
+          <frames><DOMFrame index="0" duration="12"><elements>
+            <DOMShape><fills><FillStyle index="1"><LinearGradient><matrix><Matrix a="0.39" d="0.1" tx="320" ty="330"/></matrix><GradientEntry color="#2E7D32" ratio="0"/><GradientEntry color="#A5D6A7" ratio="1"/></LinearGradient></FillStyle></fills>
+              <edges><Edge fillStyle1="1" edges="!0 6000|12800 6000|12800 7200|0 7200|0 6000"/></edges></DOMShape>
+            <DOMStaticText left="0" width="300"><matrix><Matrix tx="20" ty="20"/></matrix><textRuns><DOMTextRun><characters>Bouncing&#xD;Ball</characters><textAttrs><DOMTextAttrs face="Arial-BoldMT" size="24" fillColor="#FFFFFF" alignment="left"/></textAttrs></DOMTextRun></textRuns></DOMStaticText>
+          </elements></DOMFrame></frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timelines>
+</DOMDocument>

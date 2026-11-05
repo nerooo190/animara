@@ -15,6 +15,7 @@ USAGE:
                      [--transparent] [--quality <1-100>] [--no-audio]
   animara-cli convert <input> <output>       (.anim / .xfl / .fla ↔ .anim / .xfl / .fla)
   animara-cli check-scripts <file>
+  animara-cli bench [--layers <n>] [--shapes <n>] [--frames <n>] [--save <stress.anim>]
   animara-cli --version
 
 FORMATS (default inferred from --out extension):
@@ -169,6 +170,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
             }
             println!("exported {fmt} → {}", out.display());
         }
+        "bench" => bench(&args)?,
         "convert" => {
             let input = Path::new(args.get(1).ok_or(USAGE)?);
             let output = Path::new(args.get(2).ok_or(USAGE)?);
@@ -186,6 +188,100 @@ fn run(args: Vec<String>) -> Result<(), String> {
             println!("{USAGE}");
         }
     }
+    Ok(())
+}
+
+/// Synthetic stress document: `layers` layers × `shapes` tweened shapes inside nested symbols.
+fn stress_doc(layers: usize, shapes: usize, frames: u32) -> Document {
+    use animara_document::*;
+    use animara_geometry::{Affine, Path, Rect, Vec2};
+    let mut doc = Document::new(1920.0, 1080.0, 30.0);
+    // A nested symbol: a star inside a graphic symbol inside a movie clip.
+    let mut inner = Symbol::new("Star", SymbolKind::Graphic);
+    inner.timeline.layers[0].frames[0].elements.push(Element::shape(vec![ShapePath {
+        path: Path::star(Vec2::ZERO, 30.0, 5, 0.5, 0.0),
+        fill: Some(Fill::Radial {
+            stops: vec![GradientStop { offset: 0.0, color: Color::WHITE }, GradientStop { offset: 1.0, color: Color::rgb(0.9, 0.3, 0.1) }],
+            matrix: Affine::scale(30.0, 30.0),
+            spread: SpreadMode::Pad,
+            focal: 0.0,
+        }),
+        stroke: Some(Stroke::solid(Color::BLACK, 2.0)),
+        fill_rule: animara_geometry::FillRule::NonZero,
+        primitive: None,
+    }]));
+    let inner_id = doc.library.add_symbol(inner);
+    let mut outer = Symbol::new("Spinner", SymbolKind::Graphic);
+    outer.timeline.layers[0].frames[0].elements.push(Element::new(ElementKind::Instance(SymbolInstance::new(inner_id))));
+    let outer_id = doc.library.add_symbol(outer);
+    let tl = &mut doc.scenes[0].timeline;
+    tl.layers.clear();
+    for l in 0..layers {
+        let mut layer = Layer::new(&format!("Layer {l}"));
+        layer.frames = vec![Keyframe::new(0, frames - 1), Keyframe::new(frames - 1, 1)];
+        for s in 0..shapes {
+            let x = (s * 97 % 1800) as f64 + 60.0;
+            let y = ((l * 131 + s * 53) % 1000) as f64 + 40.0;
+            let e = if s % 3 == 0 {
+                Element::new(ElementKind::Instance(SymbolInstance::new(outer_id))).with_transform(Affine::translate(x, y))
+            } else {
+                Element::shape(vec![ShapePath {
+                    path: Path::ellipse(Rect::new(-15.0, -10.0, 15.0, 10.0)),
+                    fill: Some(Fill::solid(Color::from_hsv((s * 37 % 360) as f32, 0.7, 0.9, 0.9))),
+                    stroke: Some(Stroke::solid(Color::BLACK, 1.0)),
+                    fill_rule: animara_geometry::FillRule::NonZero,
+                    primitive: None,
+                }])
+                .with_transform(Affine::translate(x, y))
+            };
+            let mut end = e.clone();
+            end.transform = Affine::translate(1920.0 - x, 1080.0 - y) * Affine::rotate(3.0);
+            layer.frames[0].elements.push(e);
+            layer.frames[1].elements.push(end);
+        }
+        layer.frames[0].tween = Some(Tween::new(TweenKind::Classic));
+        tl.layers.push(layer);
+    }
+    doc
+}
+
+fn bench(args: &[String]) -> Result<(), String> {
+    use std::time::Instant;
+    let layers: usize = arg(args, "--layers").unwrap_or("20").parse().map_err(|_| "invalid --layers")?;
+    let shapes: usize = arg(args, "--shapes").unwrap_or("50").parse().map_err(|_| "invalid --shapes")?;
+    let frames: u32 = arg(args, "--frames").unwrap_or("60").parse().map_err(|_| "invalid --frames")?;
+    let doc = stress_doc(layers, shapes, frames.max(2));
+    if let Some(out) = arg(args, "--save") {
+        animara_document::save_document(&doc, Path::new(out)).map_err(|e| e.to_string())?;
+    }
+    println!("stress document: {layers} layers × {shapes} elements (1/3 nested symbol instances), {frames} frames, 1920×1080");
+    let opts = animara_animation::EvalOptions::export();
+    let t = Instant::now();
+    let mut items = 0;
+    for f in 0..frames {
+        items += animara_animation::evaluate_document_frame(&doc, 0, f, &opts).items.len();
+    }
+    let eval = t.elapsed().as_secs_f64() / frames as f64;
+    let mut cache = animara_renderer::RenderCache::new();
+    let t = Instant::now();
+    for f in 0..frames {
+        animara_renderer::render_frame(&doc, 0, f, 1.0, false, &mut cache).ok_or("render failed")?;
+    }
+    let render = t.elapsed().as_secs_f64() / frames as f64;
+    let t = Instant::now();
+    let bytes = animara_document::save_to_bytes(&doc).map_err(|e| e.to_string())?;
+    let save = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    animara_document::load_from_bytes(&bytes).map_err(|e| e.to_string())?;
+    let load = t.elapsed().as_secs_f64();
+    println!(
+        "evaluate frame (tweens + nested symbols): {:8.3} ms/frame  ({} top-level items/frame)",
+        eval * 1000.0,
+        items / frames as usize
+    );
+    println!("render frame 1920×1080 (CPU, tiny-skia):  {:8.3} ms/frame  ({:.1} fps)", render * 1000.0, 1.0 / render);
+    println!("save .anim ({} KiB):                     {:8.3} ms", bytes.len() / 1024, save * 1000.0);
+    println!("load .anim:                               {:8.3} ms", load * 1000.0);
     Ok(())
 }
 

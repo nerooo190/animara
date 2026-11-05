@@ -76,19 +76,33 @@ pub fn render_global_frame(doc: &Document, global: u32, opts: &ExportOptions, ca
     render_display_list(&dl, doc, cache, opts.scale, opts.transparent).ok_or_else(|| ExportError::Encode("invalid output size".into()))
 }
 
-/// Render every frame in range, calling `sink` with straight RGBA bytes.
+/// Render every frame in range, calling `sink` in frame order.
+///
+/// Frames are rendered in parallel batches (one worker per available core, each
+/// with its own bitmap cache) and handed to `sink` sequentially.
 pub fn for_each_frame(
     doc: &Document,
     opts: &ExportOptions,
     mut sink: impl FnMut(u32, &Pixmap) -> Result<(), ExportError>,
 ) -> Result<(u32, u32), ExportError> {
     let (a, b) = opts.frames(doc);
-    let mut cache = RenderCache::new();
+    let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1).clamp(1, 16) as u32;
+    let mut caches: Vec<RenderCache> = (0..workers).map(|_| RenderCache::new()).collect();
     let mut size = (0, 0);
-    for g in a..=b {
-        let pm = render_global_frame(doc, g, opts, &mut cache)?;
-        size = (pm.width(), pm.height());
-        sink(g - a, &pm)?;
+    let mut start = a;
+    while start <= b {
+        let end = (start + workers - 1).min(b);
+        let batch: Vec<Result<Pixmap, ExportError>> = std::thread::scope(|s| {
+            let handles: Vec<_> =
+                caches.iter_mut().zip(start..=end).map(|(cache, g)| s.spawn(move || render_global_frame(doc, g, opts, cache))).collect();
+            handles.into_iter().map(|h| h.join().unwrap_or_else(|_| Err(ExportError::Encode("render thread panicked".into())))).collect()
+        });
+        for (i, pm) in batch.into_iter().enumerate() {
+            let pm = pm?;
+            size = (pm.width(), pm.height());
+            sink(start + i as u32 - a, &pm)?;
+        }
+        start = end + 1;
     }
     Ok(size)
 }

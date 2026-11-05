@@ -99,9 +99,12 @@ dependencies = [
  "animara-animation",
  "animara-document",
  "animara-exporters",
+ "animara-geometry",
  "animara-importers",
  "animara-renderer",
  "animara-scripting",
+ "image",
+ "serde_json",
 ]
 
 [[package]]
