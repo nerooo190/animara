@@ -1,6 +1,16 @@
 [package]
 name = "animara-importers"
-version = "0.1.0"
-edition = "2024"
+description = "Importers (images, SVG, XFL, FLA) for Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-document.workspace = true
+animara-geometry.workspace = true
+quick-xml.workspace = true
+zip.workspace = true
+image.workspace = true
+usvg.workspace = true
+thiserror.workspace = true
+miniz_oxide = "0.9.1"

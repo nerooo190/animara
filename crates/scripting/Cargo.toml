@@ -1,6 +1,12 @@
 [package]
 name = "animara-scripting"
-version = "0.1.0"
-edition = "2024"
+description = "Sandboxed scripting runtime (Rhai) for frame actions, events and plugins in Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-document.workspace = true
+animara-geometry.workspace = true
+serde_json.workspace = true
+rhai = { version = "1.27", features = ["serde", "sync"] }

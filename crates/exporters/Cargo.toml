@@ -1,6 +1,24 @@
 [package]
 name = "animara-exporters"
-version = "0.1.0"
-edition = "2024"
+description = "Export pipelines (PNG/GIF/APNG/WebP/video/SVG/sprite sheet/Lottie/HTML5/SWF/XFL) for Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-document.workspace = true
+animara-geometry.workspace = true
+animara-animation.workspace = true
+animara-renderer.workspace = true
+animara-text.workspace = true
+animara-media.workspace = true
+thiserror.workspace = true
+serde_json.workspace = true
+zip.workspace = true
+base64.workspace = true
+image.workspace = true
+png.workspace = true
+gif.workspace = true
+
+[dev-dependencies]
+animara-importers.workspace = true

@@ -1,6 +1,11 @@
 [package]
 name = "animara-media"
-version = "0.1.0"
-edition = "2024"
+description = "Audio decoding, waveforms, timeline mixdown, playback and video import for Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-document.workspace = true
+thiserror.workspace = true
+hound = "3.5"
