@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Terminal installer for macOS:
-#   curl -fsSL https://github.com/animara/animara/releases/latest/download/install-macos.sh | bash
+#   curl -fsSL https://github.com/nerooo190/animara/releases/latest/download/install-macos.sh | bash
 # Downloads the universal .tar.gz, verifies its SHA-256, installs Animara.app into ~/Applications
 # and links animara / animara-cli into ~/.local/bin.
 set -euo pipefail
-REPO="${ANIMARA_REPO:-animara/animara}"
+REPO="${ANIMARA_REPO:-nerooo190/animara}"
 VERSION="${ANIMARA_VERSION:-$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p')}"
 NAME="Animara-$VERSION-macos-universal.tar.gz"
 URL="https://github.com/$REPO/releases/download/v$VERSION"
