@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Animation engine: resolves a timeline at a frame into concrete elements
+//! (tween interpolation, motion guides, graphic-symbol synchronisation,
+//! armatures, layer parenting, cameras) and flattens nested symbols into a
+//! renderer-ready [`DisplayItem`] tree.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod display;
+mod tween;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use display::{
+    DisplayItem, DisplayList, EvalOptions, evaluate_document_frame, evaluate_timeline, recolor_item, scene_at_global_frame,
+    transform_item,
+};
+pub use tween::{camera_at, layer_elements_at, pose_at};

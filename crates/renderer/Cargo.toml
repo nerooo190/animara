@@ -1,6 +1,14 @@
 [package]
 name = "animara-renderer"
-version = "0.1.0"
-edition = "2024"
+description = "Anti-aliased CPU renderer (tiny-skia) for Animara display lists, with filters, blend modes and masks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-geometry.workspace = true
+animara-document.workspace = true
+animara-animation.workspace = true
+animara-text.workspace = true
+tiny-skia.workspace = true
+image.workspace = true

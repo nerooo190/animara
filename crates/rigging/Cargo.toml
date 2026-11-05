@@ -1,6 +1,10 @@
 [package]
 name = "animara-rigging"
-version = "0.1.0"
-edition = "2024"
+description = "Bones, forward/inverse kinematics and pose interpolation for Animara"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+animara-geometry.workspace = true
+animara-document.workspace = true
