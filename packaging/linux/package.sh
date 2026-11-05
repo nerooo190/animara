@@ -11,6 +11,7 @@ ARCH="${ARCH:-$(uname -m)}"
 DIST="$ROOT/dist"
 mkdir -p "$DIST"
 what="${1:-all}"
+FAILED=0
 
 stage_tree() { # $1 = prefix dir
   install -Dm755 "$BIN/animara" "$1/usr/bin/animara"
@@ -51,7 +52,7 @@ if [[ $what == appimage || $what == all ]]; then
     ln -s usr/share/applications/io.github.animara.Animara.desktop "$app/io.github.animara.Animara.desktop"
     cp "$ROOT/assets/animara.svg" "$app/io.github.animara.Animara.svg"
     printf '#!/bin/sh\nHERE="$(dirname "$(readlink -f "$0")")"\nexec "$HERE/usr/bin/animara" "$@"\n' > "$app/AppRun"; chmod +x "$app/AppRun"
-    ARCH="$ARCH" appimagetool "$app" "$DIST/Animara-$VERSION-$ARCH.AppImage"
+    ARCH="$ARCH" appimagetool "$app" "$DIST/Animara-$VERSION-$ARCH.AppImage" || { echo "appimagetool failed" >&2; FAILED=1; }
   else
     echo "appimagetool not found; skipping AppImage" >&2
   fi
@@ -59,7 +60,7 @@ fi
 
 if [[ $what == deb || $what == all ]]; then
   if command -v cargo-deb >/dev/null; then
-    (cd "$ROOT" && cargo deb -p animara-app --no-build -o "$DIST/")
+    (cd "$ROOT" && cargo deb -p animara-app --no-build -o "$DIST/") || { echo "cargo-deb failed" >&2; FAILED=1; }
   else
     echo "cargo-deb not found; skipping .deb" >&2
   fi
@@ -67,10 +68,11 @@ fi
 
 if [[ $what == rpm || $what == all ]]; then
   if command -v cargo-generate-rpm >/dev/null; then
-    (cd "$ROOT" && cargo generate-rpm -p crates/app -o "$DIST/")
+    (cd "$ROOT" && cargo generate-rpm -p crates/app -o "$DIST/") || { echo "cargo-generate-rpm failed" >&2; FAILED=1; }
   else
     echo "cargo-generate-rpm not found; skipping .rpm" >&2
   fi
 fi
 
 (cd "$DIST" && sha256sum * > SHA256SUMS.txt 2>/dev/null || true)
+exit "$FAILED"

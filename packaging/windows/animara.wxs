@@ -10,15 +10,13 @@
            UpgradeCode="7D4C9B1E-3A55-4E2B-9C1D-6A2F0B8E4C11" Scope="perMachine" Compressed="yes">
     <MajorUpgrade DowngradeErrorMessage="A newer version of Animara is already installed." />
     <MediaTemplate EmbedCab="yes" />
-    <Icon Id="AnimaraIcon" SourceFile="$(var.BinDir)\animara.exe" />
-    <Property Id="ARPPRODUCTICON" Value="AnimaraIcon" />
     <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Animara">
         <Component Id="MainExe" Guid="*">
           <File Id="AnimaraExe" Source="$(var.BinDir)\animara.exe" KeyPath="yes" />
-          <ProgId Id="Animara.Document" Description="Animara animation document" Icon="AnimaraExe">
+          <ProgId Id="Animara.Document" Description="Animara animation document">
             <Extension Id="anim" ContentType="application/x-animara">
               <Verb Id="open" Command="Open" TargetFile="AnimaraExe" Argument="&quot;%1&quot;" />
             </Extension>

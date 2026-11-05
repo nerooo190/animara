@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libfuse2 file
+      - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libfuse2t64 file
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --release
       - run: cargo build --release -p animara-app -p animara-cli
@@ -31,6 +31,8 @@ jobs:
           curl -fsSL -o appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${{ matrix.arch }}.AppImage"
           chmod +x appimagetool && sudo mv appimagetool /usr/local/bin/
       - name: Build tarball, AppImage, deb, rpm
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
         run: ARCH=${{ matrix.arch }} packaging/linux/package.sh all
       - name: PKGBUILD source bundle
         run: tar -czf dist/animara-PKGBUILD.tar.gz -C packaging/linux PKGBUILD
@@ -40,20 +42,31 @@ jobs:
           dpkg-deb --info dist/*.deb
           rpm -qpi dist/*.rpm || true
           ./dist/Animara-*-${{ matrix.arch }}.AppImage --appimage-extract >/dev/null && squashfs-root/usr/bin/animara-cli --version
+          ./target/release/animara-cli export tests/fixtures/xfl/bouncing/bouncing.xfl --out smoke.gif
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: linux-${{ matrix.arch }}
           path: dist/*
 
   flatpak:
+    needs: linux
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
       options: --privileged
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release -p animara-app -p animara-cli
+      # Reuse the x86_64 binaries from the linux job (glibc 2.39 ≤ Freedesktop 24.08 runtime).
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-x86_64
+          path: linux-dist
+      - name: Stage binaries
+        run: |
+          mkdir -p target/release
+          tar -xzf linux-dist/animara-*-linux-x86_64.tar.gz -C linux-dist
+          cp linux-dist/animara-*-linux-x86_64/animara linux-dist/animara-*-linux-x86_64/animara-cli target/release/
       - uses: flathub-infra/flatpak-github-actions/flatpak-builder@master
         with:
           bundle: Animara.flatpak
@@ -100,12 +113,13 @@ jobs:
       - name: MSI (WiX)
         shell: pwsh
         run: |
-          dotnet tool install --global wix
+          dotnet tool install --global wix --version 5.0.2
           wix build packaging/windows/animara.wxs -arch ${{ matrix.arch }} -d Version=${{ steps.v.outputs.version }} -d BinDir=target/${{ matrix.target }}/release -o "dist/Animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}.msi"
       - name: Setup EXE (NSIS)
         if: matrix.arch == 'x64'
         shell: pwsh
         run: |
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { choco install nsis -y --no-progress }
           & "C:\Program Files (x86)\NSIS\makensis.exe" /DVERSION=${{ steps.v.outputs.version }} /DBINDIR=..\..\target\${{ matrix.target }}\release /DOUTFILE=..\..\dist\Animara-${{ steps.v.outputs.version }}-windows-${{ matrix.arch }}-setup.exe packaging\windows\animara.nsi
       - name: Smoke test
         if: matrix.arch == 'x64'
